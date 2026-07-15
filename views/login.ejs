@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('partials/head', { title: 'Iniciar sesión - CODEBYTES' }) %>
+</head>
+<body class="pagina-login">
+  <main class="login-box">
+    <img class="login-logo" src="/images/logo-codebytes.png" alt="CODEBYTES">
+    <p class="login-subtitulo">Control de mesas para meseros</p>
+
+    <% if (error) { %>
+      <p class="error"><i class="fa-solid fa-triangle-exclamation"></i> <%= error %></p>
+    <% } %>
+
+    <form method="POST" action="/login">
+      <label>
+        <span>Usuario</span>
+        <div class="input-icono">
+          <i class="fa-solid fa-user"></i>
+          <input type="text" name="usuario" autocomplete="username" required autofocus>
+        </div>
+      </label>
+      <label>
+        <span>Clave</span>
+        <div class="input-icono">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" name="clave" autocomplete="current-password" required>
+        </div>
+      </label>
+      <button type="submit"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
+    </form>
+  </main>
+</body>
+</html>

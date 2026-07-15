@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('../partials/head', { title: cuenta.nombrecuenta + ' - CODEBYTES' }) %>
+</head>
+<body>
+  <%- include('../partials/topbar', { user }) %>
+  <div class="app-shell">
+    <%- include('../partials/sidebar', { user, activo: 'mesas' }) %>
+
+    <div class="app-content">
+      <main>
+        <div class="content-header">
+          <div>
+            <h1><%= cuenta.nomesa %> — <%= cuenta.nombrecuenta %></h1>
+            <p class="muted"><%= cuenta.zona %><% if (cuenta.enviadacaja) { %> · Enviada a caja<% } %></p>
+          </div>
+          <nav class="breadcrumb">
+            <a href="/mesas"><i class="fa-solid fa-house"></i> Home</a> <i class="fa-solid fa-chevron-right"></i>
+            <a href="/mesas/<%= cuenta.mesaid %>/cuentas">Cuentas</a> <i class="fa-solid fa-chevron-right"></i> <%= cuenta.nombrecuenta %>
+          </nav>
+        </div>
+
+        <section class="panel">
+          <h2><i class="fa-solid fa-clipboard-list"></i> Pedido</h2>
+          <% if (pedido.lineas.length === 0) { %>
+            <p>Sin productos todavía.</p>
+          <% } else { %>
+            <div class="tabla-scroll">
+              <table class="tabla-pedido">
+                <thead>
+                  <tr><th>#Pedido</th><th>Producto</th><th>Cant.</th><th>Precio</th><th>ISV%</th><th>Nota</th></tr>
+                </thead>
+                <tbody>
+                  <% pedido.lineas.forEach((l) => { %>
+                    <tr>
+                      <td><%= l.nopedido %></td>
+                      <td><%= l.producto %><% if (l.cortesia) { %> (cortesía)<% } %></td>
+                      <td><%= l.cantidad %></td>
+                      <td><%= l.precio.toFixed(2) %></td>
+                      <td><%= l.porcentajeisv %></td>
+                      <td><%= l.descripcion %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+            <p class="totales">
+              Subtotal: <%= pedido.subtotal.toFixed(2) %> —
+              Impuesto: <%= pedido.impuesto.toFixed(2) %> —
+              <strong>Total: <%= pedido.total.toFixed(2) %></strong>
+            </p>
+          <% } %>
+        </section>
+
+        <% if (bloqueada) { %>
+          <p class="aviso"><i class="fa-solid fa-circle-exclamation"></i> Esta cuenta ya no admite cambios (facturada, inactiva o enviada a caja).</p>
+        <% } else { %>
+        <section class="panel">
+          <h2><i class="fa-solid fa-utensils"></i> Agregar productos</h2>
+          <div class="catalogo">
+            <% let categoriaActual = null; %>
+            <% productos.forEach((p) => { %>
+              <% if (p.categoria !== categoriaActual) { categoriaActual = p.categoria; %>
+                <h3><%= categoriaActual %></h3>
+              <% } %>
+              <button type="button" class="producto-btn"
+                data-productoid="<%= p.productoid %>"
+                data-producto="<%= p.producto %>"
+                data-precio="<%= p.precioventa %>">
+                <%= p.producto %> — <%= Number(p.precioventa).toFixed(2) %>
+              </button>
+            <% }) %>
+          </div>
+
+          <h3>Carrito</h3>
+          <ul id="carrito"></ul>
+
+          <form id="form-pedido" method="POST" action="/cuentas/<%= cuenta.cuentamesaid %>/pedido">
+            <input type="hidden" name="items" id="items-input">
+            <label>Comentarios <input type="text" name="comentarios"></label>
+            <label class="check"><input type="checkbox" name="llevar" value="1"> Para llevar</label>
+            <button type="submit" id="btn-enviar-pedido" disabled><i class="fa-solid fa-fire-burner"></i> Enviar comanda</button>
+          </form>
+        </section>
+
+        <section class="acciones-cuenta">
+          <form method="POST" action="/cuentas/<%= cuenta.cuentamesaid %>/proforma">
+            <button type="submit" class="btn-secundario"><i class="fa-solid fa-file-invoice"></i> Generar proforma</button>
+          </form>
+          <form method="POST" action="/cuentas/<%= cuenta.cuentamesaid %>/enviar-caja">
+            <button type="submit" class="btn-primario"><i class="fa-solid fa-cash-register"></i> Enviar a caja</button>
+          </form>
+        </section>
+        <% } %>
+      </main>
+
+      <%- include('../partials/footer') %>
+    </div>
+  </div>
+
+  <%- include('../partials/layout-scripts') %>
+  <script>
+    const carrito = [];
+    const listaEl = document.getElementById('carrito');
+    const itemsInput = document.getElementById('items-input');
+    const btnEnviar = document.getElementById('btn-enviar-pedido');
+
+    function render() {
+      listaEl.innerHTML = '';
+      carrito.forEach((item, idx) => {
+        const li = document.createElement('li');
+        li.textContent = `${item.cantidad} x ${item.producto} `;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = 'Quitar';
+        btn.onclick = () => { carrito.splice(idx, 1); render(); };
+        li.appendChild(btn);
+        listaEl.appendChild(li);
+      });
+      itemsInput.value = JSON.stringify(carrito.map(({ productoid, cantidad }) => ({ productoid, cantidad })));
+      btnEnviar.disabled = carrito.length === 0;
+    }
+
+    document.querySelectorAll('.producto-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const productoid = Number(btn.dataset.productoid);
+        const producto = btn.dataset.producto;
+        const existente = carrito.find((i) => i.productoid === productoid);
+        if (existente) {
+          existente.cantidad += 1;
+        } else {
+          carrito.push({ productoid, producto, cantidad: 1 });
+        }
+        render();
+      });
+    });
+  </script>
+</body>
+</html>

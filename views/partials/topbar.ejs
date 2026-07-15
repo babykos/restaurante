@@ -1,0 +1,16 @@
+<header class="topbar">
+  <button type="button" class="btn-hamburger" id="btn-toggle-sidebar" aria-label="Menú">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+  <a href="/mesas" class="brand">
+    <img src="/images/logo-codebytes.png" alt="CODEBYTES">
+  </a>
+  <div class="topbar-spacer"></div>
+  <div class="user-menu">
+    <i class="fa-solid fa-circle-user"></i>
+    <span><%= user.usuario %></span>
+    <form method="POST" action="/logout">
+      <button type="submit" title="Salir"><i class="fa-solid fa-right-from-bracket"></i></button>
+    </form>
+  </div>
+</header>

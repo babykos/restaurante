@@ -1,0 +1,16 @@
+<script>
+  (function () {
+    const btn = document.getElementById('btn-toggle-sidebar');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    function cerrar() {
+      sidebar.classList.remove('abierto');
+      overlay.classList.remove('visible');
+    }
+    btn.addEventListener('click', () => {
+      sidebar.classList.toggle('abierto');
+      overlay.classList.toggle('visible');
+    });
+    overlay.addEventListener('click', cerrar);
+  })();
+</script>

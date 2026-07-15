@@ -1,0 +1,16 @@
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-user">
+    <i class="fa-solid fa-circle-user"></i>
+    <div>
+      <strong><%= user.usuario %></strong>
+      <span class="estado-online"><i class="fa-solid fa-circle"></i> Online</span>
+    </div>
+  </div>
+  <p class="sidebar-titulo">Opciones principales</p>
+  <nav class="sidebar-nav">
+    <a href="/mesas" class="<%= typeof activo !== 'undefined' && activo === 'mesas' ? 'activo' : '' %>">
+      <i class="fa-solid fa-table-cells"></i> Mapa de Mesas
+    </a>
+  </nav>
+</aside>
+<div class="sidebar-overlay" id="sidebar-overlay"></div>

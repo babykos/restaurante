@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la /c/Users/Pedruca/.claude/projects/c--Users-Pedruca-Desktop-RESTAURANTE/memory/)",
+      "Read(//c/Users/Pedruca/.claude/projects/c--Users-Pedruca-Desktop-RESTAURANTE/memory//**)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/meseros/**)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/meseros/apps/mesas/**)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/meseros/apps/pedidos/**)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/maverick/**)"
+    ]
+  }
+}

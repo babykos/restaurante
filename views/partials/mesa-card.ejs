@@ -1,0 +1,28 @@
+<article class="card-mesa">
+  <header><%= m.nomesa %></header>
+  <div class="card-mesa-body">
+    <img src="/images/mesa.png" alt="">
+    <div class="card-mesa-info">
+      <% if (m.estado === 'libre') { %>
+        <strong class="estado-libre">MESA DISPONIBLE</strong>
+        <span>Mesero: Disponible</span>
+      <% } else if (m.estado === 'mia') { %>
+        <strong class="estado-mia">MESA OCUPADA</strong>
+        <span>Mesero: Vos</span>
+      <% } else { %>
+        <strong class="estado-ocupada">MESA OCUPADA</strong>
+        <span>Mesero: <%= m.dueno %></span>
+      <% } %>
+    </div>
+    <% if (m.estado === 'libre') { %>
+      <form method="POST" action="/mesas/<%= m.mesaid %>/abrir" class="form-abrir">
+        <input type="text" name="nombrecuenta" placeholder="Nombre cuenta" value="<%= m.nomesa %>">
+        <button type="submit">Entrar</button>
+      </form>
+    <% } else if (m.estado === 'mia') { %>
+      <a class="btn-entrar" href="/mesas/<%= m.mesaid %>/cuentas">Entrar</a>
+    <% } else { %>
+      <button type="button" class="btn-entrar" disabled>Ocupada</button>
+    <% } %>
+  </div>
+</article>

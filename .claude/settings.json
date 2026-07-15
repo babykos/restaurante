@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/meseros/apps/mesas/acc/**)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/meseros/apps/pedidos/acc/**)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/meseros/**)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/meseros/apps/mesas/**)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/meseros/apps/pedidos/js/**)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/meseros/apps/mesas/modalmoverpedido/**)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/meseros/apps/mesas/js/**)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/meseros/apps/mesas/modalmoverpedido2/**)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/maverick/src/vistas/restaurante/**)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/maverick/src/**)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/maverick/**)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/maverick/src/vistas/paneldecontrol/**)",
+      "Bash(find \"C:\\\\Users\\\\Pedruca\\\\Documents\\\\NetBeansProjects\\\\maverick\\\\src\\\\vistas\\\\restaurante\" -type f 2>/dev/null *)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/maverick/src/updates/**)",
+      "Bash(find \"C:\\\\Users\\\\Pedruca\\\\Documents\\\\NetBeansProjects\\\\maverick\" -iname \"dbPedidosMesa.java\" 2>/dev/null *)",
+      "Read(//c/Users/Pedruca/AppData/Local/Temp/claude/c--Users-Pedroca-Desktop-RESTAURANTE/6ef837ed-b66a-4893-8b96-bb6c1d47557a/tasks/**)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\\\\n\" http://localhost:3000/mesas)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\\\\n\" http://localhost:3000/cuentas/1)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/login)"
+    ]
+  }
+}

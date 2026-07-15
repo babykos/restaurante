@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('../partials/head', { title: 'Control de Mesas - CODEBYTES' }) %>
+</head>
+<body>
+  <%- include('../partials/topbar', { user }) %>
+  <div class="app-shell">
+    <%- include('../partials/sidebar', { user, activo: 'mesas' }) %>
+
+    <div class="app-content">
+      <main>
+        <div class="content-header">
+          <div>
+            <h1>Control de Mesas</h1>
+            <p class="muted">En esta área se manejan las mesas de los meseros</p>
+          </div>
+          <nav class="breadcrumb">
+            <i class="fa-solid fa-house"></i> Home <i class="fa-solid fa-chevron-right"></i> Control de Mesas
+          </nav>
+        </div>
+
+        <div class="tabs">
+          <button type="button" class="tab activo" data-tab="mias">
+            <i class="fa-solid fa-table-cells"></i> Mis mesas
+          </button>
+          <% zonas.forEach((z) => { %>
+            <button type="button" class="tab" data-tab="zona-<%= z.zonaid %>"><%= z.zona %></button>
+          <% }) %>
+        </div>
+
+        <section class="grid-mesas" data-panel="mias">
+          <% const mias = zonas.flatMap(z => z.mesas.filter(m => m.estado === 'mia')); %>
+          <% if (mias.length === 0) { %>
+            <p class="sin-mesas">No tenés mesas abiertas. Elegí una zona para abrir una mesa libre.</p>
+          <% } %>
+          <% mias.forEach((m) => { %>
+            <%- include('../partials/mesa-card', { m }) %>
+          <% }) %>
+        </section>
+
+        <% zonas.forEach((z) => { %>
+          <section class="grid-mesas oculto" data-panel="zona-<%= z.zonaid %>">
+            <% z.mesas.forEach((m) => { %>
+              <%- include('../partials/mesa-card', { m }) %>
+            <% }) %>
+          </section>
+        <% }) %>
+      </main>
+
+      <%- include('../partials/footer') %>
+    </div>
+  </div>
+
+  <%- include('../partials/layout-scripts') %>
+  <script>
+    document.querySelectorAll('.tab').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach((b) => b.classList.remove('activo'));
+        document.querySelectorAll('[data-panel]').forEach((p) => p.classList.add('oculto'));
+        btn.classList.add('activo');
+        document.querySelector(`[data-panel="${btn.dataset.tab}"]`).classList.remove('oculto');
+      });
+    });
+  </script>
+</body>
+</html>

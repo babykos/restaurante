@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('../partials/head', { title: 'Cuentas de mesa - CODEBYTES' }) %>
+</head>
+<body>
+  <%- include('../partials/topbar', { user }) %>
+  <div class="app-shell">
+    <%- include('../partials/sidebar', { user, activo: 'mesas' }) %>
+
+    <div class="app-content">
+      <main>
+        <div class="content-header">
+          <div>
+            <h1>Cuentas</h1>
+            <p class="muted">Cuentas activas de esta mesa</p>
+          </div>
+          <nav class="breadcrumb">
+            <a href="/mesas"><i class="fa-solid fa-house"></i> Home</a> <i class="fa-solid fa-chevron-right"></i> Cuentas
+          </nav>
+        </div>
+
+        <% if (cuentas.length === 0) { %>
+          <p class="sin-mesas">Esta mesa no tiene cuentas activas.</p>
+        <% } %>
+        <ul class="lista-cuentas">
+          <% cuentas.forEach((c) => { %>
+            <li>
+              <a href="/cuentas/<%= c.cuentamesaid %>">
+                <i class="fa-solid fa-receipt"></i>
+                <span><%= c.nombrecuenta %></span>
+                <% if (c.enviadacaja) { %><span class="badge">enviada a caja</span><% } %>
+              </a>
+            </li>
+          <% }) %>
+        </ul>
+      </main>
+
+      <%- include('../partials/footer') %>
+    </div>
+  </div>
+  <%- include('../partials/layout-scripts') %>
+</body>
+</html>
