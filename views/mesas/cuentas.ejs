@@ -8,7 +8,7 @@
   <div class="flex pt-16 min-h-screen">
     <%- include('../partials/sidebar', { user, activo: 'mesas' }) %>
 
-    <div class="flex-1 flex flex-col min-h-[calc(100vh-4rem)] lg:ml-64">
+    <div class="flex-1 flex flex-col min-w-0 min-h-[calc(100vh-4rem)] lg:ml-64">
       <main class="p-5 flex-1">
         <div class="bg-white rounded-lg shadow-sm px-5 py-4 flex flex-wrap justify-between items-start gap-2 mb-5">
           <div>
@@ -21,11 +21,17 @@
           </nav>
         </div>
 
-        <div class="flex flex-col sm:flex-row gap-3 mb-5">
-          <details class="relative flex-1">
+        <% if (typeof flash !== 'undefined' && flash) { %>
+          <div id="flash-banner" class="bg-emerald-100 text-emerald-800 rounded-lg px-4 py-3 mb-5 flex items-center gap-2">
+            <i class="fa-solid fa-circle-check"></i> <%= flash.mensaje %>
+          </div>
+        <% } %>
+
+        <div class="grid grid-cols-3 gap-2 mb-5">
+          <details class="relative">
             <summary class="list-none cursor-pointer bg-white border border-slate-300 text-slate-700 hover:bg-slate-50
-                             text-sm font-medium rounded-md px-4 py-2.5 flex items-center justify-center gap-2">
-              <i class="fa-solid fa-circle-plus"></i> Nueva cuenta
+                             text-xs sm:text-sm font-medium rounded-md px-2 py-2 flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-circle-plus"></i> <span class="hidden sm:inline">Nueva cuenta</span>
             </summary>
             <form method="POST" action="/mesas/<%= mesa.mesaid %>/cuentas"
               class="absolute z-10 mt-2 bg-white border border-slate-200 rounded-md shadow-lg p-3 flex gap-2 w-72 max-w-[90vw]">
@@ -37,13 +43,13 @@
             </form>
           </details>
 
-          <details class="relative flex-1">
+          <details class="relative">
             <summary class="list-none cursor-pointer bg-white border border-slate-300 text-slate-700 hover:bg-slate-50
-                             text-sm font-medium rounded-md px-4 py-2.5 flex items-center justify-center gap-2">
-              <i class="fa-solid fa-right-left"></i> Trasladar a mesero
+                             text-xs sm:text-sm font-medium rounded-md px-2 py-2 flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-right-left"></i> <span class="hidden sm:inline">Trasladar a mesero</span>
             </summary>
             <form method="POST" action="/mesas/<%= mesa.mesaid %>/trasladar"
-              class="absolute z-10 mt-2 bg-white border border-slate-200 rounded-md shadow-lg p-3 flex gap-2 w-72 max-w-[90vw]">
+              class="absolute z-10 mt-2 right-0 bg-white border border-slate-200 rounded-md shadow-lg p-3 flex gap-2 w-72 max-w-[90vw]">
               <select name="recibeId" required class="flex-1 border border-slate-300 rounded-md px-2 py-1.5 text-sm">
                 <option value="" disabled selected>Elegí un mesero</option>
                 <% usuariosParaTraslado.forEach((u) => { %>
@@ -57,9 +63,9 @@
           </details>
 
           <a href="/mesas"
-            class="flex-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium
-                   rounded-md px-4 py-2.5 flex items-center justify-center gap-2">
-            <i class="fa-solid fa-arrow-left"></i> Regresar
+            class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs sm:text-sm font-medium
+                   rounded-md px-2 py-2 flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-arrow-left"></i> <span class="hidden sm:inline">Regresar</span>
           </a>
         </div>
 
@@ -73,14 +79,31 @@
           <p class="text-slate-500">Esta mesa no tiene cuentas activas.</p>
         <% } %>
 
+        <%
+          const cuentasAbiertas = cuentas.filter((x) => !x.nodocumento && !x.enviadacaja);
+          function puedeTrasladar(c) {
+            return !c.nodocumento && !c.enviadacaja && cuentasAbiertas.some((o) => o.cuentamesaid !== c.cuentamesaid);
+          }
+        %>
+
         <div class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
           <% cuentas.forEach((c) => { %>
             <article class="bg-white rounded-lg shadow-sm border-t-4 border-sky-500 overflow-hidden flex flex-col">
               <header class="px-4 py-2.5 font-bold text-sm border-b border-slate-100 flex justify-between items-center">
                 <span>Cuenta → <%= c.nombrecuenta %></span>
-                <% if (c.enviadacaja) { %>
-                  <span class="bg-amber-100 text-amber-800 text-xs rounded px-2 py-0.5">enviada a caja</span>
-                <% } %>
+                <div class="flex items-center gap-2">
+                  <% if (c.enviadacaja) { %>
+                    <span class="bg-amber-100 text-amber-800 text-xs rounded px-2 py-0.5">enviada a caja</span>
+                  <% } %>
+                  <% if (c.pedido.lineas.length === 0) { %>
+                    <form method="POST" action="/cuentas/<%= c.cuentamesaid %>/eliminar"
+                      onsubmit="return confirm('¿Eliminar la cuenta <%= c.nombrecuenta %>?');">
+                      <button type="submit" title="Eliminar cuenta" class="text-slate-400 hover:text-rose-600 font-normal">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    </form>
+                  <% } %>
+                </div>
               </header>
 
               <a href="/cuentas/<%= c.cuentamesaid %>"
@@ -97,6 +120,7 @@
                     <thead>
                       <tr class="text-left text-slate-500">
                         <th class="py-1.5 pr-2">Cant.</th><th class="py-1.5 pr-2">Producto</th><th class="py-1.5 pr-2">Precio</th>
+                        <% if (puedeTrasladar(c)) { %><th class="py-1.5 pr-2 w-8"></th><% } %>
                       </tr>
                     </thead>
                     <tbody>
@@ -105,6 +129,15 @@
                           <td class="py-1.5 pr-2"><%= l.cantidad %></td>
                           <td class="py-1.5 pr-2"><%= l.producto %></td>
                           <td class="py-1.5 pr-2"><%= l.precio.toFixed(2) %></td>
+                          <% if (puedeTrasladar(c)) { %>
+                            <td class="py-1.5 pr-2">
+                              <button type="button" class="trasladar-btn text-sky-600 hover:text-sky-800" title="Trasladar"
+                                data-origen="<%= c.cuentamesaid %>" data-productoid="<%= l.productoid %>"
+                                data-descripcion="<%= l.descripcion %>" data-producto="<%= l.producto %>">
+                                <i class="fa-solid fa-right-left"></i>
+                              </button>
+                            </td>
+                          <% } %>
                         </tr>
                       <% }) %>
                     </tbody>
@@ -114,30 +147,137 @@
 
               <p class="px-4 py-2 text-sm font-semibold text-right">Total: <%= c.pedido.total.toFixed(2) %></p>
 
-              <div class="p-3 pt-0 grid grid-cols-2 gap-2">
+              <div class="p-3 pt-0 grid grid-cols-3 gap-2">
                 <form method="POST" action="/cuentas/<%= c.cuentamesaid %>/proforma">
                   <button type="submit"
-                    class="w-full bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm
-                           font-medium rounded-md py-2 flex items-center justify-center gap-2">
+                    class="w-full bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs sm:text-sm
+                           font-medium rounded-md py-2 flex items-center justify-center gap-1.5">
                     <i class="fa-solid fa-file-invoice"></i> Proforma
                   </button>
                 </form>
-                <form method="POST" action="/cuentas/<%= c.cuentamesaid %>/enviar-caja">
-                  <button type="submit"
-                    class="w-full bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md py-2
-                           flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-cash-register"></i> Caja
+                <a href="/cuentas/<%= c.cuentamesaid %>"
+                  class="w-full bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs sm:text-sm
+                         font-medium rounded-md py-2 flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-eye"></i> Ver
+                </a>
+                <% if (c.nodocumento) { %>
+                  <button type="button" disabled
+                    class="w-full bg-slate-200 text-slate-500 text-xs sm:text-sm font-medium rounded-md py-2
+                           flex items-center justify-center gap-1.5 cursor-not-allowed">
+                    <i class="fa-solid fa-lock"></i> Facturada
                   </button>
-                </form>
+                <% } else if (c.enviadacaja) { %>
+                  <form method="POST" action="/cuentas/<%= c.cuentamesaid %>/enviar-caja">
+                    <button type="submit"
+                      class="w-full bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-medium rounded-md py-2
+                             flex items-center justify-center gap-1.5">
+                      <i class="fa-solid fa-rotate-left"></i> Recuperar
+                    </button>
+                  </form>
+                <% } else { %>
+                  <form method="POST" action="/cuentas/<%= c.cuentamesaid %>/enviar-caja">
+                    <button type="submit"
+                      class="w-full bg-sky-600 hover:bg-sky-700 text-white text-xs sm:text-sm font-medium rounded-md py-2
+                             flex items-center justify-center gap-1.5">
+                      <i class="fa-solid fa-cash-register"></i> Caja
+                    </button>
+                  </form>
+                <% } %>
               </div>
             </article>
           <% }) %>
         </div>
+
+        <% if (cuentasAbiertas.length > 1) { %>
+          <dialog id="dialog-trasladar"
+            class="fixed inset-0 m-auto h-fit w-full max-w-sm rounded-lg shadow-lg p-0 border-0 backdrop:bg-slate-900/50">
+            <form id="form-trasladar" method="POST" class="p-5 flex flex-col gap-3">
+              <h2 class="text-sm font-bold text-slate-800">Trasladar producto</h2>
+              <p id="producto-traslado-label" class="text-sm text-slate-600"></p>
+              <input type="hidden" name="productoid" id="traslado-productoid">
+              <input type="hidden" name="descripcion" id="traslado-descripcion">
+              <label class="block text-sm">
+                Cantidad a trasladar
+                <input type="number" name="cantidad" id="cantidad-traslado" min="1" step="1" required
+                  class="block w-full border border-slate-300 rounded-md px-2 py-1.5 mt-1 text-sm">
+              </label>
+              <label class="block text-sm">
+                Trasladar a
+                <select name="destino" id="destino-traslado" required
+                  class="block w-full border border-slate-300 rounded-md px-2 py-1.5 mt-1 text-sm"></select>
+              </label>
+              <div class="flex justify-end gap-2 mt-1">
+                <button type="button" onclick="document.getElementById('dialog-trasladar').close()"
+                  class="text-slate-600 hover:bg-slate-100 text-sm font-medium rounded-md px-3 py-2">
+                  Cancelar
+                </button>
+                <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md px-3 py-2">
+                  Trasladar
+                </button>
+              </div>
+            </form>
+          </dialog>
+        <% } %>
       </main>
 
       <%- include('../partials/footer') %>
     </div>
   </div>
   <%- include('../partials/layout-scripts') %>
+  <script>
+    const flashBanner = document.getElementById('flash-banner');
+    if (flashBanner) {
+      setTimeout(() => flashBanner.remove(), 4000);
+    }
+
+    const cuentasData = <%- JSON.stringify(cuentas.map((c) => ({
+      cuentamesaid: c.cuentamesaid,
+      nombrecuenta: c.nombrecuenta,
+      nodocumento: c.nodocumento,
+      enviadacaja: c.enviadacaja,
+      lineas: c.pedido.lineas.map((l) => ({ productoid: l.productoid, descripcion: l.descripcion, cantidad: l.cantidad })),
+    }))) %>;
+
+    const dialogTrasladar = document.getElementById('dialog-trasladar');
+    if (dialogTrasladar) {
+      const formTrasladar = document.getElementById('form-trasladar');
+      const inputCantidadTraslado = document.getElementById('cantidad-traslado');
+      const selectDestinoTraslado = document.getElementById('destino-traslado');
+      const labelProductoTraslado = document.getElementById('producto-traslado-label');
+
+      document.querySelectorAll('.trasladar-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const origen = Number(btn.dataset.origen);
+          const productoid = Number(btn.dataset.productoid);
+          const descripcion = btn.dataset.descripcion || '';
+          const producto = btn.dataset.producto;
+
+          const cuentaOrigen = cuentasData.find((c) => c.cuentamesaid === origen);
+          const disponible = cuentaOrigen.lineas
+            .filter((l) => l.productoid === productoid && (l.descripcion || '').toLowerCase() === descripcion.toLowerCase())
+            .reduce((n, l) => n + Number(l.cantidad), 0);
+
+          formTrasladar.action = `/cuentas/${origen}/trasladar-producto`;
+          document.getElementById('traslado-productoid').value = productoid;
+          document.getElementById('traslado-descripcion').value = descripcion;
+          inputCantidadTraslado.max = disponible;
+          inputCantidadTraslado.value = disponible;
+          labelProductoTraslado.textContent = `${producto}${descripcion ? ' — ' + descripcion : ''} (disponible: ${disponible})`;
+
+          selectDestinoTraslado.innerHTML = '<option value="" disabled selected>Elegí una cuenta</option>';
+          cuentasData
+            .filter((c) => c.cuentamesaid !== origen && !c.nodocumento && !c.enviadacaja)
+            .forEach((c) => {
+              const opt = document.createElement('option');
+              opt.value = c.cuentamesaid;
+              opt.textContent = c.nombrecuenta;
+              selectDestinoTraslado.appendChild(opt);
+            });
+
+          dialogTrasladar.showModal();
+        });
+      });
+    }
+  </script>
 </body>
 </html>

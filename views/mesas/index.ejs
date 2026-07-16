@@ -8,7 +8,7 @@
   <div class="flex pt-16 min-h-screen">
     <%- include('../partials/sidebar', { user, activo: 'mesas' }) %>
 
-    <div class="flex-1 flex flex-col min-h-[calc(100vh-4rem)] lg:ml-64">
+    <div class="flex-1 flex flex-col min-w-0 min-h-[calc(100vh-4rem)] lg:ml-64">
       <main class="p-5 flex-1">
         <div class="bg-white rounded-lg shadow-sm px-5 py-4 flex flex-wrap justify-between items-start gap-2 mb-5">
           <div>
@@ -20,15 +20,15 @@
           </nav>
         </div>
 
-        <div class="flex gap-2 overflow-x-auto pb-1 mb-5">
+        <div class="flex flex-wrap gap-2 mb-5">
           <button type="button" data-tab="mias"
-            class="tab flex-none px-4 py-2.5 rounded-md border text-sm font-semibold whitespace-nowrap
+            class="tab px-4 py-2.5 rounded-md border text-sm font-semibold whitespace-nowrap
                    bg-sky-600 border-sky-600 text-white">
             <i class="fa-solid fa-table-cells mr-1.5"></i> Mis mesas
           </button>
           <% zonas.forEach((z) => { %>
             <button type="button" data-tab="zona-<%= z.zonaid %>"
-              class="tab flex-none px-4 py-2.5 rounded-md border text-sm font-semibold whitespace-nowrap
+              class="tab px-4 py-2.5 rounded-md border text-sm font-semibold whitespace-nowrap
                      bg-white border-slate-300 text-slate-700"><%= z.zona %></button>
           <% }) %>
         </div>
@@ -36,7 +36,7 @@
         <section data-panel="mias" class="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
           <% const mias = zonas.flatMap(z => z.mesas.filter(m => m.estado === 'mia')); %>
           <% if (mias.length === 0) { %>
-            <p class="text-slate-500 col-span-full">No tenés mesas abiertas. Elegí una zona para abrir una mesa libre.</p>
+            <p class="text-slate-500 col-span-full">No tienes ninguna mesa abierta, debes elegir una zona para abrir una mesa libre.</p>
           <% } %>
           <% mias.forEach((m) => { %>
             <%- include('../partials/mesa-card', { m }) %>

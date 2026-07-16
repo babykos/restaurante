@@ -1,19 +1,26 @@
 const express = require('express');
 const { requireAuth } = require('../middleware/auth');
 const { cargarCuentaYValidarDueno, bloqueadaParaPedidos } = require('../middleware/cuentas');
-const { catalogo } = require('../services/productos');
+const { setFlash, popFlash } = require('../middleware/flash');
+const { catalogo, variantes } = require('../services/productos');
 const cuentasService = require('../services/cuentas');
 
 const router = express.Router();
 
 router.get('/:cuentamesaid', requireAuth, cargarCuentaYValidarDueno, async (req, res, next) => {
   try {
-    const [productos, pedido] = await Promise.all([catalogo(), cuentasService.detalle(req.cuenta.cuentamesaid)]);
+    const [productos, variantesProductos, pedido] = await Promise.all([
+      catalogo(),
+      variantes(),
+      cuentasService.detalle(req.cuenta.cuentamesaid),
+    ]);
     res.render('cuentas/show', {
       cuenta: req.cuenta,
       productos,
+      variantesProductos,
       pedido,
       bloqueada: bloqueadaParaPedidos(req.cuenta),
+      flash: popFlash(req),
       user: req.session.user,
     });
   } catch (err) {
@@ -62,7 +69,8 @@ router.post('/:cuentamesaid/pedido', requireAuth, cargarCuentaYValidarDueno, asy
 router.post('/:cuentamesaid/proforma', requireAuth, cargarCuentaYValidarDueno, async (req, res, next) => {
   try {
     await cuentasService.generarProforma(req.cuenta.cuentamesaid, req.cuenta.restauranteid);
-    res.redirect(`/cuentas/${req.cuenta.cuentamesaid}`);
+    setFlash(req, 'success', 'Proforma generada');
+    res.redirect(`/mesas/${req.cuenta.mesaid}/cuentas`);
   } catch (err) {
     next(err);
   }
@@ -70,8 +78,40 @@ router.post('/:cuentamesaid/proforma', requireAuth, cargarCuentaYValidarDueno, a
 
 router.post('/:cuentamesaid/enviar-caja', requireAuth, cargarCuentaYValidarDueno, async (req, res, next) => {
   try {
-    await cuentasService.enviarACaja(req.cuenta.cuentamesaid);
-    res.redirect(`/cuentas/${req.cuenta.cuentamesaid}`);
+    const estabaEnviada = req.cuenta.enviadacaja === 1;
+    await cuentasService.toggleEnviarACaja(req.cuenta.cuentamesaid);
+    setFlash(req, 'success', estabaEnviada ? 'Cuenta recuperada de caja' : 'Cuenta enviada a caja');
+    res.redirect(`/mesas/${req.cuenta.mesaid}/cuentas`);
+  } catch (err) {
+    if (err.status) return res.status(err.status).send(err.message);
+    next(err);
+  }
+});
+
+router.post('/:cuentamesaid/trasladar-producto', requireAuth, cargarCuentaYValidarDueno, async (req, res, next) => {
+  try {
+    const productoid = Number(req.body.productoid);
+    const cantidad = Number(req.body.cantidad);
+    const destino = Number(req.body.destino);
+    const descripcion = req.body.descripcion || '';
+
+    if (!productoid || !(cantidad > 0) || !destino) {
+      return res.status(400).send('Datos de traslado inválidos');
+    }
+
+    await cuentasService.trasladarProducto(req.cuenta.cuentamesaid, { productoid, descripcion, cantidad, destino });
+    setFlash(req, 'success', 'Producto trasladado');
+    res.redirect(`/mesas/${req.cuenta.mesaid}/cuentas`);
+  } catch (err) {
+    if (err.status) return res.status(err.status).send(err.message);
+    next(err);
+  }
+});
+
+router.post('/:cuentamesaid/eliminar', requireAuth, cargarCuentaYValidarDueno, async (req, res, next) => {
+  try {
+    await cuentasService.eliminarCuenta(req.cuenta.cuentamesaid);
+    res.redirect(`/mesas/${req.cuenta.mesaid}/cuentas`);
   } catch (err) {
     if (err.status) return res.status(err.status).send(err.message);
     next(err);

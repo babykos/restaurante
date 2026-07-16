@@ -10,6 +10,7 @@ const {
 } = require('../services/mesas');
 const cuentasService = require('../services/cuentas');
 const trasladosService = require('../services/traslados');
+const { popFlash } = require('../middleware/flash');
 
 const router = express.Router();
 
@@ -56,7 +57,8 @@ router.get('/:mesaid/cuentas', requireAuth, async (req, res, next) => {
       trasladosService.usuariosActivos(req.session.user.usuarioid),
     ]);
 
-    res.render('mesas/cuentas', { mesa, cuentas, usuariosParaTraslado, user: req.session.user });
+    const flash = popFlash(req);
+    res.render('mesas/cuentas', { mesa, cuentas, usuariosParaTraslado, user: req.session.user, flash });
   } catch (err) {
     next(err);
   }

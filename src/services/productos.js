@@ -3,7 +3,7 @@ const pool = require('../config/db');
 async function catalogo() {
   const [rows] = await pool.query(
     `SELECT p.productoid, p.producto, p.precioventa, p.categoriaid, c.categoria,
-            COALESCE(i.porcentaje, 0) AS porcentajeisv
+            COALESCE(i.porcentaje, 0) AS porcentajeisv, IFNULL(p.grupoid, 0) AS grupoid
      FROM productos p
      JOIN categoriasproductos c ON c.categoriaid = p.categoriaid
      LEFT JOIN impuestos i ON i.impuestoid = p.impuestoid
@@ -13,9 +13,14 @@ async function catalogo() {
   return rows;
 }
 
+async function variantes() {
+  const [rows] = await pool.query('SELECT varianteid, grupoid, variante FROM variantesproductos ORDER BY grupoid, variante');
+  return rows;
+}
+
 async function obtenerPrecioImpuesto(productoid) {
   const [rows] = await pool.query(
-    `SELECT p.precioventa, COALESCE(i.porcentaje, 0) AS porcentajeisv
+    `SELECT p.producto, p.precioventa, COALESCE(i.porcentaje, 0) AS porcentajeisv
      FROM productos p
      LEFT JOIN impuestos i ON i.impuestoid = p.impuestoid
      WHERE p.productoid = :productoid AND p.activo = 1`,
@@ -24,4 +29,4 @@ async function obtenerPrecioImpuesto(productoid) {
   return rows.length ? rows[0] : null;
 }
 
-module.exports = { catalogo, obtenerPrecioImpuesto };
+module.exports = { catalogo, obtenerPrecioImpuesto, variantes };
