@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const cuentasService = require('./cuentas');
 
 async function restaurantes() {
   const [rows] = await pool.query('SELECT restauranteid, restaurante FROM restaurantes ORDER BY restaurante');
@@ -150,6 +151,29 @@ async function mesasEliminadas({ desde, hasta, restauranteid, usuarioid }) {
   return rows;
 }
 
+async function previewReserva(reservaid) {
+  const [[reserva]] = await pool.query(
+    `SELECT rm.reservaid, m.nomesa, z.zona, u.usuario AS mesero, rm.fecha, rm.razon
+     FROM reservamesa rm
+     JOIN mesas m ON m.mesaid = rm.mesaid
+     JOIN zonas z ON z.zonaid = m.zonaid
+     JOIN usuarios u ON u.usuarioid = rm.usuarioid
+     WHERE rm.reservaid = :reservaid`,
+    { reservaid }
+  );
+  if (!reserva) return null;
+
+  const [cuentasBase] = await pool.query(
+    'SELECT cuentamesaid, nombrecuenta FROM cuentamesa WHERE reservaid = :reservaid ORDER BY cuentamesaid',
+    { reservaid }
+  );
+  const cuentas = await Promise.all(
+    cuentasBase.map(async (c) => ({ ...c, pedido: await cuentasService.detalle(c.cuentamesaid) }))
+  );
+
+  return { reserva, cuentas };
+}
+
 module.exports = {
   restaurantes,
   meseros,
@@ -159,4 +183,5 @@ module.exports = {
   productosSinVentas,
   cancelaciones,
   mesasEliminadas,
+  previewReserva,
 };

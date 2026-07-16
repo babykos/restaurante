@@ -30,6 +30,19 @@ router.get('/:cuentamesaid', requireAuth, cargarCuentaYValidarDueno, async (req,
   }
 });
 
+router.get('/:cuentamesaid/preview', requireAuth, cargarCuentaYValidarDueno, async (req, res, next) => {
+  try {
+    const pedido = await cuentasService.detalle(req.cuenta.cuentamesaid);
+    res.render('cuentas/preview', {
+      cuenta: req.cuenta,
+      pedido,
+      user: req.session.user,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/:cuentamesaid/pedido', requireAuth, cargarCuentaYValidarDueno, async (req, res, next) => {
   try {
     if (bloqueadaParaPedidos(req.cuenta)) {

@@ -67,4 +67,21 @@ router.get('/', requireEncargado, async (req, res, next) => {
   }
 });
 
+router.get('/mesa-eliminada/:reservaid/preview', requireEncargado, async (req, res, next) => {
+  try {
+    const reservaid = Number(req.params.reservaid);
+    const datos = await estadisticasService.previewReserva(reservaid);
+    if (!datos) {
+      return res.status(404).send('Reserva no encontrada');
+    }
+    res.render('estadisticas/preview-mesa', {
+      reserva: datos.reserva,
+      cuentas: datos.cuentas,
+      user: req.session.user,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

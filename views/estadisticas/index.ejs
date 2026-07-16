@@ -309,6 +309,7 @@
                   <tr class="text-left text-slate-500 border-b border-slate-200">
                     <th class="py-2 pr-2">Mesa</th><th class="py-2 pr-2">Zona</th>
                     <th class="py-2 pr-2">Mesero</th><th class="py-2 pr-2">Fecha</th><th class="py-2 pr-2">Motivo</th>
+                    <th class="py-2 pr-2 w-8"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -319,12 +320,18 @@
                       <td class="py-2 pr-2"><%= m.mesero %></td>
                       <td class="py-2 pr-2 whitespace-nowrap"><%= new Date(m.fecha).toLocaleString('es-HN') %></td>
                       <td class="py-2 pr-2"><%= m.razon %></td>
+                      <td class="py-2 pr-2">
+                        <a href="/estadisticas/mesa-eliminada/<%= m.reservaid %>/preview" title="Previsualizar"
+                          class="text-sky-600 hover:text-sky-800">
+                          <i class="fa-solid fa-eye"></i>
+                        </a>
+                      </td>
                     </tr>
                   <% }) %>
                 </tbody>
                 <tfoot>
                   <tr class="border-t-2 border-slate-300 font-semibold text-slate-800">
-                    <td class="py-2 pr-2" colspan="5">Total: <%= num(mesasEliminadas.length) %> mesas eliminadas</td>
+                    <td class="py-2 pr-2" colspan="6">Total: <%= num(mesasEliminadas.length) %> mesas eliminadas</td>
                   </tr>
                 </tfoot>
               </table>

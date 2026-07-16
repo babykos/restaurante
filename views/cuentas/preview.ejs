@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('../partials/head', { title: cuenta.nombrecuenta + ' - CODEBYTES' }) %>
+</head>
+<body class="bg-slate-100">
+  <%- include('../partials/topbar', { user }) %>
+  <div class="flex pt-16 min-h-screen">
+    <%- include('../partials/sidebar', { user, activo: 'mesas' }) %>
+
+    <div class="flex-1 flex flex-col min-w-0 min-h-[calc(100vh-4rem)] lg:ml-64">
+      <main class="p-5 flex-1 w-full max-w-3xl">
+        <div class="bg-white rounded-lg shadow-sm px-5 py-4 flex flex-wrap justify-between items-start gap-2 mb-5">
+          <div>
+            <h1 class="text-xl font-bold text-slate-800"><%= cuenta.nomesa %> — <%= cuenta.nombrecuenta %></h1>
+            <p class="text-slate-500 text-sm mt-1">
+              <%= cuenta.zona %><% if (cuenta.enviadacaja) { %> · Enviada a caja<% } %>
+            </p>
+          </div>
+          <nav class="text-sm text-slate-500 flex items-center gap-2 flex-wrap">
+            <a href="/mesas" class="text-sky-600 hover:underline"><i class="fa-solid fa-house"></i> Home</a>
+            <i class="fa-solid fa-chevron-right text-xs"></i>
+            <a href="/mesas/<%= cuenta.mesaid %>/cuentas" class="text-sky-600 hover:underline">Cuentas</a>
+            <i class="fa-solid fa-chevron-right text-xs"></i> <%= cuenta.nombrecuenta %>
+          </nav>
+        </div>
+
+        <div class="bg-sky-50 text-sky-800 rounded-lg px-4 py-2.5 mb-5 flex items-center gap-2 text-sm">
+          <i class="fa-solid fa-eye"></i> Solo previsualización — esta vista no permite editar el pedido.
+        </div>
+
+        <section class="bg-white rounded-lg shadow-sm p-5 mb-5">
+          <h2 class="text-lg font-semibold flex items-center gap-2 mb-3">
+            <i class="fa-solid fa-clipboard-list text-sky-600"></i> Pedido
+          </h2>
+          <% if (pedido.lineas.length === 0) { %>
+            <p class="text-slate-500">Sin productos todavía.</p>
+          <% } else { %>
+            <div class="hidden sm:block overflow-x-auto">
+              <table class="w-full min-w-[480px] border-collapse text-sm">
+                <thead>
+                  <tr class="text-left text-slate-500">
+                    <th class="py-2 pr-2">#Pedido</th><th class="py-2 pr-2">Producto</th>
+                    <th class="py-2 pr-2">Cant.</th><th class="py-2 pr-2">Precio</th>
+                    <th class="py-2 pr-2">ISV%</th><th class="py-2 pr-2">Nota</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% pedido.lineas.forEach((l) => { %>
+                    <tr class="border-t border-slate-100">
+                      <td class="py-2 pr-2"><%= l.nopedido %></td>
+                      <td class="py-2 pr-2"><%= l.producto %><% if (l.cortesia) { %> (cortesía)<% } %></td>
+                      <td class="py-2 pr-2"><%= l.cantidad %></td>
+                      <td class="py-2 pr-2"><%= l.precio.toFixed(2) %></td>
+                      <td class="py-2 pr-2"><%= l.porcentajeisv %></td>
+                      <td class="py-2 pr-2"><%= l.nota %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="sm:hidden flex flex-col gap-3">
+              <% pedido.lineas.forEach((l) => { %>
+                <div class="border border-slate-200 rounded-md p-3">
+                  <div class="flex justify-between items-start gap-2">
+                    <span class="font-semibold text-sm text-slate-800">
+                      <%= l.producto %><% if (l.cortesia) { %> (cortesía)<% } %>
+                    </span>
+                    <span class="text-xs text-slate-400 whitespace-nowrap">#<%= l.nopedido %></span>
+                  </div>
+                  <div class="mt-2 grid grid-cols-3 gap-2 text-xs">
+                    <div><span class="block text-slate-400">Cant.</span><%= l.cantidad %></div>
+                    <div><span class="block text-slate-400">Precio</span><%= l.precio.toFixed(2) %></div>
+                    <div><span class="block text-slate-400">ISV%</span><%= l.porcentajeisv %></div>
+                  </div>
+                  <% if (l.nota) { %>
+                    <p class="mt-2 text-xs text-slate-500"><span class="text-slate-400">Nota:</span> <%= l.nota %></p>
+                  <% } %>
+                </div>
+              <% }) %>
+            </div>
+
+            <p class="mt-3 text-sm">
+              Subtotal: <%= pedido.subtotal.toFixed(2) %> —
+              Impuesto: <%= pedido.impuesto.toFixed(2) %> —
+              <strong class="text-base">Total: <%= pedido.total.toFixed(2) %></strong>
+            </p>
+          <% } %>
+        </section>
+
+        <a href="/mesas/<%= cuenta.mesaid %>/cuentas"
+          class="inline-flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300
+                 text-sm font-medium rounded-md px-4 py-2">
+          <i class="fa-solid fa-arrow-left"></i> Regresar
+        </a>
+      </main>
+
+      <%- include('../partials/footer') %>
+    </div>
+  </div>
+
+  <%- include('../partials/layout-scripts') %>
+</body>
+</html>
