@@ -84,6 +84,9 @@
           function puedeTrasladar(c) {
             return !c.nodocumento && !c.enviadacaja && cuentasAbiertas.some((o) => o.cuentamesaid !== c.cuentamesaid);
           }
+          function puedeCancelar(c) {
+            return !c.nodocumento && !c.enviadacaja && user.rol === 'encargado';
+          }
         %>
 
         <div class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
@@ -120,22 +123,33 @@
                     <thead>
                       <tr class="text-left text-slate-500">
                         <th class="py-1.5 pr-2">Cant.</th><th class="py-1.5 pr-2">Producto</th><th class="py-1.5 pr-2">Precio</th>
-                        <% if (puedeTrasladar(c)) { %><th class="py-1.5 pr-2 w-8"></th><% } %>
+                        <% if (puedeTrasladar(c) || puedeCancelar(c)) { %><th class="py-1.5 pr-2 w-16"></th><% } %>
                       </tr>
                     </thead>
                     <tbody>
                       <% c.pedido.lineas.forEach((l) => { %>
                         <tr class="border-t border-slate-100">
                           <td class="py-1.5 pr-2"><%= l.cantidad %></td>
-                          <td class="py-1.5 pr-2"><%= l.producto %></td>
+                          <td class="py-1.5 pr-2"><%= l.descripcion || l.producto %></td>
                           <td class="py-1.5 pr-2"><%= l.precio.toFixed(2) %></td>
-                          <% if (puedeTrasladar(c)) { %>
+                          <% if (puedeTrasladar(c) || puedeCancelar(c)) { %>
                             <td class="py-1.5 pr-2">
-                              <button type="button" class="trasladar-btn text-sky-600 hover:text-sky-800" title="Trasladar"
-                                data-origen="<%= c.cuentamesaid %>" data-productoid="<%= l.productoid %>"
-                                data-descripcion="<%= l.descripcion %>" data-producto="<%= l.producto %>">
-                                <i class="fa-solid fa-right-left"></i>
-                              </button>
+                              <div class="flex items-center gap-2">
+                                <% if (puedeTrasladar(c)) { %>
+                                  <button type="button" class="trasladar-btn text-sky-600 hover:text-sky-800" title="Trasladar"
+                                    data-origen="<%= c.cuentamesaid %>" data-productoid="<%= l.productoid %>"
+                                    data-descripcion="<%= l.descripcion %>" data-producto="<%= l.producto %>">
+                                    <i class="fa-solid fa-right-left"></i>
+                                  </button>
+                                <% } %>
+                                <% if (puedeCancelar(c)) { %>
+                                  <button type="button" class="cancelar-btn text-rose-600 hover:text-rose-800" title="Cancelar"
+                                    data-origen="<%= c.cuentamesaid %>" data-productoid="<%= l.productoid %>"
+                                    data-descripcion="<%= l.descripcion %>" data-producto="<%= l.producto %>">
+                                    <i class="fa-solid fa-ban"></i>
+                                  </button>
+                                <% } %>
+                              </div>
                             </td>
                           <% } %>
                         </tr>
@@ -218,6 +232,33 @@
             </form>
           </dialog>
         <% } %>
+
+        <% if (user.rol === 'encargado') { %>
+          <dialog id="dialog-cancelar"
+            class="fixed inset-0 m-auto h-fit w-full max-w-sm rounded-lg shadow-lg p-0 border-0 backdrop:bg-slate-900/50">
+            <form id="form-cancelar" method="POST" class="p-5 flex flex-col gap-3"
+              onsubmit="return confirm('¿Confirmás cancelar este pedido? Se enviará una comanda de cancelación a cocina.');">
+              <h2 class="text-sm font-bold text-slate-800">Cancelar pedido</h2>
+              <p id="producto-cancelar-label" class="text-sm text-slate-600"></p>
+              <input type="hidden" name="productoid" id="cancelar-productoid">
+              <input type="hidden" name="descripcion" id="cancelar-descripcion">
+              <label class="block text-sm">
+                Cantidad a cancelar
+                <input type="number" name="cantidad" id="cantidad-cancelar" min="1" step="1" required
+                  class="block w-full border border-slate-300 rounded-md px-2 py-1.5 mt-1 text-sm">
+              </label>
+              <div class="flex justify-end gap-2 mt-1">
+                <button type="button" onclick="document.getElementById('dialog-cancelar').close()"
+                  class="text-slate-600 hover:bg-slate-100 text-sm font-medium rounded-md px-3 py-2">
+                  Cerrar
+                </button>
+                <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium rounded-md px-3 py-2">
+                  Cancelar pedido
+                </button>
+              </div>
+            </form>
+          </dialog>
+        <% } %>
       </main>
 
       <%- include('../partials/footer') %>
@@ -275,6 +316,36 @@
             });
 
           dialogTrasladar.showModal();
+        });
+      });
+    }
+
+    const dialogCancelar = document.getElementById('dialog-cancelar');
+    if (dialogCancelar) {
+      const formCancelar = document.getElementById('form-cancelar');
+      const inputCantidadCancelar = document.getElementById('cantidad-cancelar');
+      const labelProductoCancelar = document.getElementById('producto-cancelar-label');
+
+      document.querySelectorAll('.cancelar-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const origen = Number(btn.dataset.origen);
+          const productoid = Number(btn.dataset.productoid);
+          const descripcion = btn.dataset.descripcion || '';
+          const producto = btn.dataset.producto;
+
+          const cuentaOrigen = cuentasData.find((c) => c.cuentamesaid === origen);
+          const disponible = cuentaOrigen.lineas
+            .filter((l) => l.productoid === productoid && (l.descripcion || '').toLowerCase() === descripcion.toLowerCase())
+            .reduce((n, l) => n + Number(l.cantidad), 0);
+
+          formCancelar.action = `/cuentas/${origen}/cancelar-producto`;
+          document.getElementById('cancelar-productoid').value = productoid;
+          document.getElementById('cancelar-descripcion').value = descripcion;
+          inputCantidadCancelar.max = disponible;
+          inputCantidadCancelar.value = disponible;
+          labelProductoCancelar.textContent = `${producto}${descripcion && descripcion !== producto ? ' — ' + descripcion : ''} (disponible: ${disponible})`;
+
+          dialogCancelar.showModal();
         });
       });
     }

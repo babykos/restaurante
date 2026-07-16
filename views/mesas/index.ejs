@@ -20,6 +20,12 @@
           </nav>
         </div>
 
+        <% if (typeof flash !== 'undefined' && flash) { %>
+          <div id="flash-banner" class="bg-emerald-100 text-emerald-800 rounded-lg px-4 py-3 mb-5 flex items-center gap-2">
+            <i class="fa-solid fa-circle-check"></i> <%= flash.mensaje %>
+          </div>
+        <% } %>
+
         <div class="flex flex-wrap gap-2 mb-5">
           <button type="button" data-tab="mias"
             class="tab px-4 py-2.5 rounded-md border text-sm font-semibold whitespace-nowrap
@@ -39,14 +45,14 @@
             <p class="text-slate-500 col-span-full">No tienes ninguna mesa abierta, debes elegir una zona para abrir una mesa libre.</p>
           <% } %>
           <% mias.forEach((m) => { %>
-            <%- include('../partials/mesa-card', { m }) %>
+            <%- include('../partials/mesa-card', { m, user }) %>
           <% }) %>
         </section>
 
         <% zonas.forEach((z) => { %>
           <section data-panel="zona-<%= z.zonaid %>" class="hidden grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
             <% z.mesas.forEach((m) => { %>
-              <%- include('../partials/mesa-card', { m }) %>
+              <%- include('../partials/mesa-card', { m, user }) %>
             <% }) %>
           </section>
         <% }) %>
@@ -58,6 +64,11 @@
 
   <%- include('../partials/layout-scripts') %>
   <script>
+    const flashBanner = document.getElementById('flash-banner');
+    if (flashBanner) {
+      setTimeout(() => flashBanner.remove(), 4000);
+    }
+
     document.querySelectorAll('.tab').forEach((btn) => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach((b) => {

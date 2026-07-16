@@ -129,6 +129,49 @@ async function abrirSubcuenta(mesaid, nombrecuenta) {
   return insCuenta.insertId;
 }
 
+const RAZON_MIN_LENGTH = 30;
+
+async function eliminarMesaForzado(mesaid, usuario, comentario) {
+  const texto = (comentario || '').trim();
+  if (texto.length < RAZON_MIN_LENGTH) {
+    throw Object.assign(
+      new Error(`El motivo debe tener al menos ${RAZON_MIN_LENGTH} caracteres`),
+      { status: 400 }
+    );
+  }
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const [[mesa]] = await conn.query(
+      'SELECT mesaid, reservaidasignada FROM mesas WHERE mesaid = :mesaid FOR UPDATE',
+      { mesaid }
+    );
+    if (!mesa || !mesa.reservaidasignada) {
+      throw Object.assign(new Error('Esta mesa no tiene una reserva activa'), { status: 400 });
+    }
+
+    const reservaid = mesa.reservaidasignada;
+    // Igual que en Maverick: no se borra ninguna cuenta/pedido, solo se libera la mesa
+    // y se marca la reserva como eliminada, dejando el motivo como registro de auditoría.
+    const razon = `Usuario: ${usuario.usuario} - ${new Date().toLocaleString('es-HN')} -> ${texto}`.slice(0, 255);
+
+    await conn.query('UPDATE reservamesa SET eliminada = 1, razon = :razon WHERE reservaid = :reservaid', {
+      razon,
+      reservaid,
+    });
+    await conn.query('UPDATE mesas SET reservaidasignada = NULL WHERE mesaid = :mesaid', { mesaid });
+
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}
+
 module.exports = {
   mapaDeMesas,
   cuentasDeMesa,
@@ -136,4 +179,5 @@ module.exports = {
   duenoDeMesa,
   abrirMesa,
   abrirSubcuenta,
+  eliminarMesaForzado,
 };

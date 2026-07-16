@@ -1,5 +1,5 @@
 const express = require('express');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireEncargado } = require('../middleware/auth');
 const {
   mapaDeMesas,
   cuentasDeMesa,
@@ -7,10 +7,11 @@ const {
   duenoDeMesa,
   abrirMesa,
   abrirSubcuenta,
+  eliminarMesaForzado,
 } = require('../services/mesas');
 const cuentasService = require('../services/cuentas');
 const trasladosService = require('../services/traslados');
-const { popFlash } = require('../middleware/flash');
+const { popFlash, setFlash } = require('../middleware/flash');
 
 const router = express.Router();
 
@@ -33,7 +34,8 @@ router.get('/', requireAuth, async (req, res, next) => {
   try {
     const mesas = await mapaDeMesas();
     const zonas = agruparPorZona(mesas, req.session.user.usuarioid);
-    res.render('mesas/index', { zonas, user: req.session.user });
+    const flash = popFlash(req);
+    res.render('mesas/index', { zonas, user: req.session.user, flash });
   } catch (err) {
     next(err);
   }
@@ -121,6 +123,18 @@ router.post('/:mesaid/abrir', requireAuth, async (req, res, next) => {
 
     const cuentamesaid = await abrirMesa(mesaid, req.session.user.usuarioid, nombrecuenta);
     res.redirect(`/cuentas/${cuentamesaid}`);
+  } catch (err) {
+    if (err.status) return res.status(err.status).send(err.message);
+    next(err);
+  }
+});
+
+router.post('/:mesaid/eliminar', requireEncargado, async (req, res, next) => {
+  try {
+    const mesaid = Number(req.params.mesaid);
+    await eliminarMesaForzado(mesaid, req.session.user, req.body.razon);
+    setFlash(req, 'success', 'Mesa liberada');
+    res.redirect('/mesas');
   } catch (err) {
     if (err.status) return res.status(err.status).send(err.message);
     next(err);

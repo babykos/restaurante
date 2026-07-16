@@ -24,6 +24,15 @@
           : 'border-transparent text-slate-300' %>">
       <i class="fa-solid fa-right-left"></i> Trasladar mesas
     </a>
+    <% if (typeof user !== 'undefined' && user.rol === 'encargado') { %>
+      <a href="/estadisticas"
+        class="flex items-center gap-3 px-4 py-3 text-sm border-l-[3px] hover:bg-white/5 hover:text-white
+          <%= typeof activo !== 'undefined' && activo === 'estadisticas'
+            ? 'border-sky-500 bg-white/5 text-white'
+            : 'border-transparent text-slate-300' %>">
+        <i class="fa-solid fa-chart-line"></i> Estadísticas
+      </a>
+    <% } %>
   </nav>
 </aside>
 <div id="sidebar-overlay" class="hidden fixed inset-0 top-16 bg-black/50 z-30 lg:hidden"></div>

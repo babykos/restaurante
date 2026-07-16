@@ -1,23 +1,25 @@
 const express = require('express');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireEncargado } = require('../middleware/auth');
 const { cargarCuentaYValidarDueno, bloqueadaParaPedidos } = require('../middleware/cuentas');
 const { setFlash, popFlash } = require('../middleware/flash');
-const { catalogo, variantes } = require('../services/productos');
+const { catalogo, variantes, asistentes } = require('../services/productos');
 const cuentasService = require('../services/cuentas');
 
 const router = express.Router();
 
 router.get('/:cuentamesaid', requireAuth, cargarCuentaYValidarDueno, async (req, res, next) => {
   try {
-    const [productos, variantesProductos, pedido] = await Promise.all([
+    const [productos, variantesProductos, asistentesProductos, pedido] = await Promise.all([
       catalogo(),
       variantes(),
+      asistentes(),
       cuentasService.detalle(req.cuenta.cuentamesaid),
     ]);
     res.render('cuentas/show', {
       cuenta: req.cuenta,
       productos,
       variantesProductos,
+      asistentesProductos,
       pedido,
       bloqueada: bloqueadaParaPedidos(req.cuenta),
       flash: popFlash(req),
@@ -48,6 +50,12 @@ router.post('/:cuentamesaid/pedido', requireAuth, cargarCuentaYValidarDueno, asy
       item.cantidad = Number(item.cantidad);
       if (!item.productoid || !(item.cantidad > 0)) {
         return res.status(400).send('Producto o cantidad inválida');
+      }
+      if (item.opcionids !== undefined) {
+        if (!Array.isArray(item.opcionids)) {
+          return res.status(400).send('Opciones de asistente inválidas');
+        }
+        item.opcionids = item.opcionids.map(Number).filter((n) => Number.isInteger(n) && n > 0);
       }
     }
 
@@ -101,6 +109,25 @@ router.post('/:cuentamesaid/trasladar-producto', requireAuth, cargarCuentaYValid
 
     await cuentasService.trasladarProducto(req.cuenta.cuentamesaid, { productoid, descripcion, cantidad, destino });
     setFlash(req, 'success', 'Producto trasladado');
+    res.redirect(`/mesas/${req.cuenta.mesaid}/cuentas`);
+  } catch (err) {
+    if (err.status) return res.status(err.status).send(err.message);
+    next(err);
+  }
+});
+
+router.post('/:cuentamesaid/cancelar-producto', requireEncargado, cargarCuentaYValidarDueno, async (req, res, next) => {
+  try {
+    const productoid = Number(req.body.productoid);
+    const cantidad = Number(req.body.cantidad);
+    const descripcion = req.body.descripcion || '';
+
+    if (!productoid || !(cantidad > 0)) {
+      return res.status(400).send('Datos de cancelación inválidos');
+    }
+
+    await cuentasService.cancelarProducto(req.cuenta.cuentamesaid, { productoid, descripcion, cantidad });
+    setFlash(req, 'success', 'Producto cancelado');
     res.redirect(`/mesas/${req.cuenta.mesaid}/cuentas`);
   } catch (err) {
     if (err.status) return res.status(err.status).send(err.message);

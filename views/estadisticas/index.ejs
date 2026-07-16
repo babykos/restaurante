@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('../partials/head', { title: 'Estadísticas - CODEBYTES' }) %>
+</head>
+<body class="bg-slate-100">
+  <%- include('../partials/topbar', { user }) %>
+  <div class="flex pt-16 min-h-screen">
+    <%- include('../partials/sidebar', { user, activo: 'estadisticas' }) %>
+
+    <div class="flex-1 flex flex-col min-w-0 min-h-[calc(100vh-4rem)] lg:ml-64">
+      <main class="p-5 flex-1">
+        <%
+          function money(n) {
+            return 'L ' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          }
+          function num(n) {
+            return Number(n).toLocaleString('en-US');
+          }
+          const sum = (arr, campo) => arr.reduce((n, x) => n + Number(x[campo]), 0);
+        %>
+
+        <div class="bg-white rounded-lg shadow-sm px-5 py-4 flex flex-wrap justify-between items-start gap-2 mb-5">
+          <div>
+            <h1 class="text-xl font-bold text-slate-800">Estadísticas</h1>
+            <p class="text-slate-500 text-sm mt-1">Ventas, propinas, productos y cancelaciones del restaurante</p>
+          </div>
+          <nav class="text-sm text-slate-500 flex items-center gap-2 flex-wrap">
+            <a href="/mesas" class="text-sky-600 hover:underline"><i class="fa-solid fa-house"></i> Home</a>
+            <i class="fa-solid fa-chevron-right text-xs"></i> Estadísticas
+          </nav>
+        </div>
+
+        <section class="bg-white rounded-lg shadow-sm p-5 mb-5">
+          <form method="GET" action="/estadisticas" class="flex flex-wrap items-end gap-2">
+            <label class="text-sm">
+              Desde
+              <input type="date" name="desde" value="<%= desde %>"
+                class="block border border-slate-300 rounded-md px-2 py-1.5 mt-1 text-sm">
+            </label>
+            <label class="text-sm">
+              Hasta
+              <input type="date" name="hasta" value="<%= hasta %>"
+                class="block border border-slate-300 rounded-md px-2 py-1.5 mt-1 text-sm">
+            </label>
+            <label class="text-sm">
+              Restaurante
+              <select name="restauranteid" class="block border border-slate-300 rounded-md px-2 py-1.5 mt-1 text-sm min-w-[160px]">
+                <option value="">Todos</option>
+                <% restaurantesLista.forEach((r) => { %>
+                  <option value="<%= r.restauranteid %>" <%= restauranteid === r.restauranteid ? 'selected' : '' %>>
+                    <%= r.restaurante %>
+                  </option>
+                <% }) %>
+              </select>
+            </label>
+            <label class="text-sm">
+              Mesero
+              <select name="usuarioid" class="block border border-slate-300 rounded-md px-2 py-1.5 mt-1 text-sm min-w-[160px]">
+                <option value="">Todos</option>
+                <% meserosLista.forEach((m) => { %>
+                  <option value="<%= m.usuarioid %>" <%= usuarioid === m.usuarioid ? 'selected' : '' %>>
+                    <%= m.usuario %>
+                  </option>
+                <% }) %>
+              </select>
+            </label>
+            <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md px-4 py-2">
+              <i class="fa-solid fa-magnifying-glass"></i> Aplicar
+            </button>
+          </form>
+        </section>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+          <div class="bg-white rounded-lg shadow-sm p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center">
+              <i class="fa-solid fa-sack-dollar"></i>
+            </div>
+            <div>
+              <p class="text-lg font-semibold text-slate-800"><%= money(totales.vendido) %></p>
+              <p class="text-xs text-slate-500">Total vendido</p>
+            </div>
+          </div>
+          <div class="bg-white rounded-lg shadow-sm p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+              <i class="fa-solid fa-hand-holding-dollar"></i>
+            </div>
+            <div>
+              <p class="text-lg font-semibold text-slate-800"><%= money(totales.propinas) %></p>
+              <p class="text-xs text-slate-500">Propinas</p>
+            </div>
+          </div>
+          <div class="bg-white rounded-lg shadow-sm p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center">
+              <i class="fa-solid fa-ban"></i>
+            </div>
+            <div>
+              <p class="text-lg font-semibold text-slate-800"><%= num(totales.cancelaciones) %></p>
+              <p class="text-xs text-slate-500">Cancelaciones</p>
+            </div>
+          </div>
+          <div class="bg-white rounded-lg shadow-sm p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
+              <i class="fa-solid fa-trash"></i>
+            </div>
+            <div>
+              <p class="text-lg font-semibold text-slate-800"><%= num(totales.mesasEliminadas) %></p>
+              <p class="text-xs text-slate-500">Mesas eliminadas</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+          <section class="bg-white rounded-lg shadow-sm p-5">
+            <h2 class="text-lg font-semibold flex items-center gap-2 mb-3">
+              <i class="fa-solid fa-users text-sky-600"></i> Ventas y propinas por mesero
+            </h2>
+            <% if (ventasPorMesero.length === 0) { %>
+              <p class="text-slate-500 text-sm">Sin datos en este rango.</p>
+            <% } else { %>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-slate-500 border-b border-slate-200">
+                      <th class="py-2 pr-2">Mesero</th><th class="py-2 pr-2">Total vendido</th><th class="py-2 pr-2">Propinas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% ventasPorMesero.forEach((m) => { %>
+                      <tr class="border-t border-slate-100">
+                        <td class="py-2 pr-2"><%= m.usuario %></td>
+                        <td class="py-2 pr-2"><%= money(m.total_vendido) %></td>
+                        <td class="py-2 pr-2"><%= money(m.total_propinas) %></td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                  <tfoot>
+                    <tr class="border-t-2 border-slate-300 font-semibold text-slate-800">
+                      <td class="py-2 pr-2">Total</td>
+                      <td class="py-2 pr-2"><%= money(totales.vendido) %></td>
+                      <td class="py-2 pr-2"><%= money(totales.propinas) %></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            <% } %>
+          </section>
+
+          <section class="bg-white rounded-lg shadow-sm p-5">
+            <h2 class="text-lg font-semibold flex items-center gap-2 mb-3">
+              <i class="fa-solid fa-chart-pie text-sky-600"></i> Ventas por categoría
+            </h2>
+            <% if (ventasPorCategoria.length === 0) { %>
+              <p class="text-slate-500 text-sm">Sin datos en este rango.</p>
+            <% } else { %>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-slate-500 border-b border-slate-200">
+                      <th class="py-2 pr-2">Categoría</th><th class="py-2 pr-2">Unidades</th><th class="py-2 pr-2">Total vendido</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% ventasPorCategoria.forEach((c) => { %>
+                      <tr class="border-t border-slate-100">
+                        <td class="py-2 pr-2"><%= c.categoria %></td>
+                        <td class="py-2 pr-2"><%= num(c.unidades) %></td>
+                        <td class="py-2 pr-2"><%= money(c.total_vendido) %></td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                  <tfoot>
+                    <tr class="border-t-2 border-slate-300 font-semibold text-slate-800">
+                      <td class="py-2 pr-2">Total</td>
+                      <td class="py-2 pr-2"><%= num(sum(ventasPorCategoria, 'unidades')) %></td>
+                      <td class="py-2 pr-2"><%= money(sum(ventasPorCategoria, 'total_vendido')) %></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            <% } %>
+          </section>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+          <section class="bg-white rounded-lg shadow-sm p-5">
+            <h2 class="text-lg font-semibold flex items-center gap-2 mb-3">
+              <i class="fa-solid fa-list text-sky-600"></i> Detalle de productos (Facturados)
+            </h2>
+            <p class="text-slate-500 text-xs mb-3">Agrupado por categoría.</p>
+            <% if (productosFacturados.length === 0) { %>
+              <p class="text-slate-500 text-sm">Sin productos vendidos en este rango.</p>
+            <% } else { %>
+              <div class="overflow-x-auto max-h-[420px] overflow-y-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-slate-500 border-b border-slate-200 sticky top-0 bg-white">
+                      <th class="py-2 pr-2">Producto</th><th class="py-2 pr-2">Categoría</th>
+                      <th class="py-2 pr-2">Unidades</th><th class="py-2 pr-2">Total vendido</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% productosFacturados.forEach((p) => { %>
+                      <tr class="border-t border-slate-100">
+                        <td class="py-2 pr-2"><%= p.producto %></td>
+                        <td class="py-2 pr-2"><%= p.categoria %></td>
+                        <td class="py-2 pr-2"><%= num(p.unidades) %></td>
+                        <td class="py-2 pr-2"><%= money(p.total_vendido) %></td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                  <tfoot>
+                    <tr class="border-t-2 border-slate-300 font-semibold text-slate-800">
+                      <td class="py-2 pr-2" colspan="2">Total (<%= productosFacturados.length %> productos)</td>
+                      <td class="py-2 pr-2"><%= num(sum(productosFacturados, 'unidades')) %></td>
+                      <td class="py-2 pr-2"><%= money(sum(productosFacturados, 'total_vendido')) %></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            <% } %>
+          </section>
+
+          <section class="bg-white rounded-lg shadow-sm p-5">
+            <h2 class="text-lg font-semibold flex items-center gap-2 mb-3">
+              <i class="fa-solid fa-list text-amber-600"></i> Detalle de productos (No Facturados)
+            </h2>
+            <p class="text-slate-500 text-xs mb-3">Productos activos sin ninguna venta en este rango, agrupados por categoría.</p>
+            <% if (productosNoFacturados.length === 0) { %>
+              <p class="text-slate-500 text-sm">Todos los productos activos tuvieron ventas en este rango.</p>
+            <% } else { %>
+              <div class="overflow-x-auto max-h-[420px] overflow-y-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-slate-500 border-b border-slate-200 sticky top-0 bg-white">
+                      <th class="py-2 pr-2">Producto</th><th class="py-2 pr-2">Categoría</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% productosNoFacturados.forEach((p) => { %>
+                      <tr class="border-t border-slate-100 bg-amber-50">
+                        <td class="py-2 pr-2"><%= p.producto %></td>
+                        <td class="py-2 pr-2"><%= p.categoria %></td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                  <tfoot>
+                    <tr class="border-t-2 border-slate-300 font-semibold text-slate-800">
+                      <td class="py-2 pr-2" colspan="2">Total: <%= num(productosNoFacturados.length) %> productos sin ventas</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            <% } %>
+          </section>
+        </div>
+
+        <section class="bg-white rounded-lg shadow-sm p-5 mb-5">
+          <h2 class="text-lg font-semibold flex items-center gap-2 mb-3">
+            <i class="fa-solid fa-ban text-rose-600"></i> Cancelaciones
+          </h2>
+          <% if (cancelaciones.length === 0) { %>
+            <p class="text-slate-500 text-sm">Sin cancelaciones en este rango.</p>
+          <% } else { %>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-left text-slate-500 border-b border-slate-200">
+                    <th class="py-2 pr-2">Fecha</th><th class="py-2 pr-2">Mesero</th><th class="py-2 pr-2">Zona / Mesa</th>
+                    <th class="py-2 pr-2">Cuenta</th><th class="py-2 pr-2">Producto</th>
+                    <th class="py-2 pr-2">Cant.</th><th class="py-2 pr-2">Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% cancelaciones.forEach((c) => { %>
+                    <tr class="border-t border-slate-100">
+                      <td class="py-2 pr-2 whitespace-nowrap"><%= new Date(c.fecha).toLocaleString('es-HN') %></td>
+                      <td class="py-2 pr-2"><%= c.mesero %></td>
+                      <td class="py-2 pr-2"><%= c.zona %> / <%= c.nomesa %></td>
+                      <td class="py-2 pr-2"><%= c.nombrecuenta %></td>
+                      <td class="py-2 pr-2"><%= c.producto %></td>
+                      <td class="py-2 pr-2"><%= num(c.cantidad) %></td>
+                      <td class="py-2 pr-2"><%= money(Number(c.precio) * Number(c.cantidad)) %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+                <tfoot>
+                  <tr class="border-t-2 border-slate-300 font-semibold text-slate-800">
+                    <td class="py-2 pr-2" colspan="5">Total (<%= cancelaciones.length %> cancelaciones)</td>
+                    <td class="py-2 pr-2"><%= num(sum(cancelaciones, 'cantidad')) %></td>
+                    <td class="py-2 pr-2"><%= money(cancelaciones.reduce((n, c) => n + Number(c.precio) * Number(c.cantidad), 0)) %></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          <% } %>
+        </section>
+
+        <section class="bg-white rounded-lg shadow-sm p-5 mb-5">
+          <h2 class="text-lg font-semibold flex items-center gap-2 mb-3">
+            <i class="fa-solid fa-trash text-rose-600"></i> Mesas eliminadas
+          </h2>
+          <% if (mesasEliminadas.length === 0) { %>
+            <p class="text-slate-500 text-sm">Sin mesas eliminadas en este rango.</p>
+          <% } else { %>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-left text-slate-500 border-b border-slate-200">
+                    <th class="py-2 pr-2">Mesa</th><th class="py-2 pr-2">Zona</th>
+                    <th class="py-2 pr-2">Mesero</th><th class="py-2 pr-2">Fecha</th><th class="py-2 pr-2">Motivo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% mesasEliminadas.forEach((m) => { %>
+                    <tr class="border-t border-slate-100">
+                      <td class="py-2 pr-2"><%= m.nomesa %></td>
+                      <td class="py-2 pr-2"><%= m.zona %></td>
+                      <td class="py-2 pr-2"><%= m.mesero %></td>
+                      <td class="py-2 pr-2 whitespace-nowrap"><%= new Date(m.fecha).toLocaleString('es-HN') %></td>
+                      <td class="py-2 pr-2"><%= m.razon %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+                <tfoot>
+                  <tr class="border-t-2 border-slate-300 font-semibold text-slate-800">
+                    <td class="py-2 pr-2" colspan="5">Total: <%= num(mesasEliminadas.length) %> mesas eliminadas</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          <% } %>
+        </section>
+      </main>
+
+      <%- include('../partials/footer') %>
+    </div>
+  </div>
+  <%- include('../partials/layout-scripts') %>
+</body>
+</html>

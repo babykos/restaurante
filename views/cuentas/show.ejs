@@ -9,7 +9,7 @@
     <%- include('../partials/sidebar', { user, activo: 'mesas' }) %>
 
     <div class="flex-1 flex flex-col min-w-0 min-h-[calc(100vh-4rem)] lg:ml-64">
-      <main class="p-5 flex-1">
+      <main class="p-5 flex-1 w-full max-w-3xl">
         <div class="bg-white rounded-lg shadow-sm px-5 py-4 flex flex-wrap justify-between items-start gap-2 mb-5">
           <div>
             <h1 class="text-xl font-bold text-slate-800"><%= cuenta.nomesa %> — <%= cuenta.nombrecuenta %></h1>
@@ -119,6 +119,37 @@
             </div>
           </div>
         </dialog>
+
+        <dialog id="dialog-asistente"
+          class="fixed inset-0 m-auto h-fit w-full max-w-lg rounded-lg shadow-lg p-0 border-0 backdrop:bg-slate-900/50">
+          <div class="flex flex-col max-h-[85vh] min-h-0">
+            <div class="p-5 pb-3 shrink-0 flex items-start justify-between gap-3">
+              <div>
+                <h2 id="asistente-nombre" class="text-lg font-bold text-slate-800"></h2>
+                <p id="asistente-precio-base" class="text-sm text-slate-500"></p>
+                <p id="asistente-paso" class="text-xs text-sky-600 font-medium mt-1"></p>
+              </div>
+              <button type="button" onclick="document.getElementById('dialog-asistente').close()"
+                class="text-slate-400 hover:text-slate-600 text-xl leading-none px-1" aria-label="Cerrar">
+                &times;
+              </button>
+            </div>
+            <div id="asistente-grupos" class="px-5 overflow-y-auto flex-1 min-h-0 flex flex-col gap-3"></div>
+            <div class="p-5 pt-3 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
+              <span id="asistente-total" class="text-base font-bold text-slate-800"></span>
+              <div class="flex gap-2">
+                <button type="button" id="btn-atras-asistente"
+                  class="text-slate-600 hover:bg-slate-100 text-sm font-medium rounded-md px-3 py-2">
+                  Atrás
+                </button>
+                <button type="button" id="btn-siguiente-asistente"
+                  class="bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md px-4 py-2">
+                  Siguiente
+                </button>
+              </div>
+            </div>
+          </div>
+        </dialog>
         <% } %>
 
         <section class="bg-white rounded-lg shadow-sm p-5 mb-5">
@@ -195,6 +226,7 @@
 
     const productos = <%- JSON.stringify(typeof productos !== 'undefined' ? productos : []) %>;
     const variantesProductos = <%- JSON.stringify(typeof variantesProductos !== 'undefined' ? variantesProductos : []) %>;
+    const asistentesProductos = <%- JSON.stringify(typeof asistentesProductos !== 'undefined' ? asistentesProductos : {}) %>;
     const carrito = [];
     const SEPARADOR_VARIANTE = '>>';
     let filaEditandoDescripcion = null;
@@ -249,19 +281,25 @@
       carrito.forEach((item, idx) => {
         const tr = document.createElement('tr');
         tr.className = 'border-t border-slate-100';
+        const esAsistente = Array.isArray(item.opcionids) && item.opcionids.length > 0;
+        const nombreHtml = esAsistente
+          ? `<span class="text-slate-800">${item.producto}</span>`
+          : `<a href="#" class="producto-link text-slate-800 hover:text-sky-600 hover:underline">${item.producto}</a>`;
         tr.innerHTML = `
           <td class="py-1.5 pr-2">${item.cantidad}</td>
           <td class="py-1.5 pr-2">
-            <a href="#" class="producto-link text-slate-800 hover:text-sky-600 hover:underline">${item.producto}</a>
+            ${nombreHtml}
             ${item.descripcion ? `<div class="text-xs text-slate-400">${item.descripcion}</div>` : ''}
           </td>
           <td class="py-1.5 pr-2">${(item.cantidad * item.precio).toFixed(2)}</td>
           <td class="py-1.5 pr-2"></td>
         `;
-        tr.querySelector('.producto-link').addEventListener('click', (e) => {
-          e.preventDefault();
-          abrirModalDescripcion(idx);
-        });
+        if (!esAsistente) {
+          tr.querySelector('.producto-link').addEventListener('click', (e) => {
+            e.preventDefault();
+            abrirModalDescripcion(idx);
+          });
+        }
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'text-rose-600 hover:text-rose-800';
@@ -271,7 +309,7 @@
         carritoBody.appendChild(tr);
       });
       itemsInput.value = JSON.stringify(
-        carrito.map(({ productoid, cantidad, descripcion }) => ({ productoid, cantidad, descripcion }))
+        carrito.map(({ productoid, cantidad, descripcion, opcionids }) => ({ productoid, cantidad, descripcion, opcionids }))
       );
       btnEnviar.disabled = carrito.length === 0;
     }
@@ -281,6 +319,197 @@
       if (!confirm(`¿Confirmás enviar ${cantidadTotal} producto(s) a cocina?`)) {
         e.preventDefault();
       }
+    });
+
+    function moneyL(n) {
+      return 'L ' + Number(n).toFixed(2);
+    }
+
+    const dialogAsistente = document.getElementById('dialog-asistente');
+    const asistenteNombreEl = document.getElementById('asistente-nombre');
+    const asistentePrecioBaseEl = document.getElementById('asistente-precio-base');
+    const asistentePasoEl = document.getElementById('asistente-paso');
+    const asistenteGruposEl = document.getElementById('asistente-grupos');
+    const asistenteTotalEl = document.getElementById('asistente-total');
+    const btnAtrasAsistente = document.getElementById('btn-atras-asistente');
+    const btnSiguienteAsistente = document.getElementById('btn-siguiente-asistente');
+
+    let asistenteActual = null; // { producto, grupos, paso, seleccion: Map<grupoid, Set<productoid>> }
+
+    function abrirAsistente(producto) {
+      const grupos = asistentesProductos[producto.productoid] || [];
+      const seleccion = new Map();
+      grupos.forEach((g) => seleccion.set(g.grupoid, new Set()));
+
+      asistenteActual = { producto, grupos, paso: 0, seleccion };
+
+      asistenteNombreEl.textContent = producto.producto;
+      asistentePrecioBaseEl.textContent = 'Precio base: ' + moneyL(producto.precioventa);
+
+      renderPasoAsistente();
+      dialogAsistente.showModal();
+    }
+
+    function renderPasoAsistente() {
+      const { grupos, paso, seleccion } = asistenteActual;
+      const grupo = grupos[paso];
+
+      asistentePasoEl.textContent = grupos.length > 1 ? `Paso ${paso + 1} de ${grupos.length}` : '';
+      asistenteGruposEl.innerHTML = '';
+
+      if (grupo) {
+        asistenteGruposEl.appendChild(construirPanelGrupo(grupo, seleccion.get(grupo.grupoid)));
+      }
+
+      btnAtrasAsistente.classList.toggle('invisible', paso === 0);
+      btnSiguienteAsistente.textContent = paso === grupos.length - 1 ? 'Confirmar' : 'Siguiente';
+
+      recalcularTotalAsistente();
+    }
+
+    function construirPanelGrupo(grupo, seleccionGrupo) {
+      const panel = document.createElement('div');
+      panel.className = 'border border-slate-200 rounded-md overflow-hidden';
+
+      const cabecera = document.createElement('div');
+      cabecera.className = 'flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-200';
+
+      const nombreGrupo = document.createElement('span');
+      nombreGrupo.className = 'text-sm font-semibold text-slate-700';
+      nombreGrupo.textContent = grupo.grupo;
+
+      const infoDer = document.createElement('div');
+      infoDer.className = 'flex items-center gap-2 text-xs';
+      if (grupo.obligatorio) {
+        const req = document.createElement('span');
+        req.className = 'text-rose-600 font-semibold';
+        req.textContent = 'Requerido';
+        infoDer.appendChild(req);
+      }
+      const tipoSel = document.createElement('span');
+      tipoSel.className = 'text-slate-400';
+      tipoSel.textContent = grupo.seleccionMaxima === 1 ? 'Elige 1' : `Elige hasta ${grupo.seleccionMaxima}`;
+      infoDer.appendChild(tipoSel);
+
+      cabecera.appendChild(nombreGrupo);
+      cabecera.appendChild(infoDer);
+      panel.appendChild(cabecera);
+
+      const lista = document.createElement('div');
+      lista.className = 'grid grid-cols-1 sm:grid-cols-2';
+
+      grupo.opciones.forEach((opcion) => {
+        const fila = document.createElement('label');
+        fila.className = 'flex items-center justify-between gap-2 px-3 py-2 cursor-pointer hover:bg-slate-50 border-t border-slate-100';
+
+        const nombreOpcion = document.createElement('span');
+        nombreOpcion.className = 'text-sm text-slate-700';
+        nombreOpcion.textContent = opcion.producto;
+
+        const derecha = document.createElement('div');
+        derecha.className = 'flex items-center gap-2 shrink-0';
+
+        if (opcion.precioadicional > 0) {
+          const precioSpan = document.createElement('span');
+          precioSpan.className = 'text-xs text-slate-500';
+          precioSpan.textContent = '+' + moneyL(opcion.precioadicional);
+          derecha.appendChild(precioSpan);
+        }
+
+        const control = document.createElement('input');
+        control.type = grupo.seleccionMaxima === 1 ? 'radio' : 'checkbox';
+        control.name = 'asistente-grupo-' + grupo.grupoid;
+        control.className = 'w-4 h-4';
+        control.checked = seleccionGrupo.has(opcion.productoid);
+
+        control.addEventListener('change', () => {
+          if (control.type === 'radio') {
+            seleccionGrupo.clear();
+            seleccionGrupo.add(opcion.productoid);
+          } else if (control.checked) {
+            if (seleccionGrupo.size >= grupo.seleccionMaxima) {
+              control.checked = false;
+              alert(`Solo puedes elegir hasta ${grupo.seleccionMaxima} opciones en "${grupo.grupo}"`);
+              return;
+            }
+            seleccionGrupo.add(opcion.productoid);
+          } else {
+            seleccionGrupo.delete(opcion.productoid);
+          }
+          recalcularTotalAsistente();
+        });
+
+        derecha.appendChild(control);
+        fila.appendChild(nombreOpcion);
+        fila.appendChild(derecha);
+        lista.appendChild(fila);
+      });
+
+      panel.appendChild(lista);
+      return panel;
+    }
+
+    function recalcularTotalAsistente() {
+      if (!asistenteActual) return;
+      let extras = 0;
+      asistenteActual.grupos.forEach((grupo) => {
+        const seleccionGrupo = asistenteActual.seleccion.get(grupo.grupoid);
+        grupo.opciones.forEach((opcion) => {
+          if (seleccionGrupo.has(opcion.productoid)) {
+            extras += Number(opcion.precioadicional);
+          }
+        });
+      });
+      const total = Number(asistenteActual.producto.precioventa) + extras;
+      asistenteTotalEl.textContent = 'Total: ' + moneyL(total);
+    }
+
+    btnAtrasAsistente.addEventListener('click', () => {
+      if (asistenteActual && asistenteActual.paso > 0) {
+        asistenteActual.paso -= 1;
+        renderPasoAsistente();
+      }
+    });
+
+    btnSiguienteAsistente.addEventListener('click', () => {
+      if (!asistenteActual) return;
+      const { grupos, paso, seleccion } = asistenteActual;
+      const grupoActual = grupos[paso];
+
+      if (grupoActual.obligatorio && seleccion.get(grupoActual.grupoid).size === 0) {
+        alert(`Debes seleccionar al menos una opción en "${grupoActual.grupo}"`);
+        return;
+      }
+
+      if (paso < grupos.length - 1) {
+        asistenteActual.paso += 1;
+        renderPasoAsistente();
+        return;
+      }
+
+      const seleccionadas = [];
+      for (const grupo of grupos) {
+        for (const opcion of grupo.opciones) {
+          if (seleccion.get(grupo.grupoid).has(opcion.productoid)) {
+            seleccionadas.push(opcion);
+          }
+        }
+      }
+
+      const extras = seleccionadas.reduce((n, o) => n + Number(o.precioadicional), 0);
+      const precioTotal = Number(asistenteActual.producto.precioventa) + extras;
+
+      carrito.push({
+        productoid: asistenteActual.producto.productoid,
+        producto: asistenteActual.producto.producto,
+        precio: precioTotal,
+        cantidad: 1,
+        descripcion: seleccionadas.map((o) => o.producto).join(', '),
+        opcionids: seleccionadas.map((o) => o.productoid),
+      });
+      renderCarrito();
+
+      dialogAsistente.close();
     });
 
     function agregarAlCarrito(p) {
@@ -321,7 +550,13 @@
           btn.type = 'button';
           btn.className = 'bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 text-sm font-medium rounded-md py-3 px-2';
           btn.textContent = `${p.producto} — ${Number(p.precioventa).toFixed(2)}`;
-          btn.addEventListener('click', () => agregarAlCarrito(p));
+          btn.addEventListener('click', () => {
+            if (p.esAsistente) {
+              abrirAsistente(p);
+            } else {
+              agregarAlCarrito(p);
+            }
+          });
           productosGrid.appendChild(btn);
         });
       categoriasGrid.classList.add('hidden');

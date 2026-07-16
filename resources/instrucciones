@@ -1,0 +1,20 @@
+Primer paso instalar Node.js
+
+Para instalar las dependencias de node en el proyecto, abre consola y pone npm install 
+(automaticamente se descargaran las dependencias)
+(edita el archivo .env y pone las credenciales de la base de datos)
+
+PARA PODER INSTALAR EL SERVICIO DE MESEROS, HAY QUE HACER ESTOS CAMBIOS
+
+desde consola ejecuta nssm (en el directorio del proyecto)
+ejecutas nssm install Restaurante
+
+abre una ventanita simple donde configurás:
+Ruta: node.exe Normalmente Program Files
+Directorio de inicio: C:\Users\kos_3\Desktop\RESTAURANTE (importante, porque ahí es donde vive tu .env)
+Donde este el proyecto
+Argumentos: src\app.js
+
+nssm start Restaurante
+
+una vez corriendo el servicio, puedes instalar el apk
