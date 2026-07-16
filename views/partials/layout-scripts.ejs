@@ -3,13 +3,16 @@
     const btn = document.getElementById('btn-toggle-sidebar');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
+    function abrir() {
+      sidebar.classList.remove('-translate-x-full');
+      overlay.classList.remove('hidden');
+    }
     function cerrar() {
-      sidebar.classList.remove('abierto');
-      overlay.classList.remove('visible');
+      sidebar.classList.add('-translate-x-full');
+      overlay.classList.add('hidden');
     }
     btn.addEventListener('click', () => {
-      sidebar.classList.toggle('abierto');
-      overlay.classList.toggle('visible');
+      sidebar.classList.contains('-translate-x-full') ? abrir() : cerrar();
     });
     overlay.addEventListener('click', cerrar);
   })();

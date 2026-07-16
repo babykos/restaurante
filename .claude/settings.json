@@ -19,7 +19,16 @@
       "Read(//c/Users/Pedruca/AppData/Local/Temp/claude/c--Users-Pedroca-Desktop-RESTAURANTE/6ef837ed-b66a-4893-8b96-bb6c1d47557a/tasks/**)",
       "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\\\\n\" http://localhost:3000/mesas)",
       "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\\\\n\" http://localhost:3000/cuentas/1)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/login)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/login)",
+      "Bash(npx tailwindcss *)",
+      "Bash(npm run *)",
+      "Bash(rm -f /tmp/visual2.txt)",
+      "Bash(curl -s -c /tmp/visual2.txt -b /tmp/visual2.txt -o /dev/null -w 'login:%{http_code}\\\\n' -X POST http://localhost:3000/login --data-urlencode usuario=_E2E_VISUAL2_ --data-urlencode clave=test123)",
+      "Bash(curl -s -c /tmp/visual2.txt -b /tmp/visual2.txt http://localhost:3000/mesas -o /tmp/mesas2.html -w 'mesas:%{http_code}\\\\n')",
+      "Read(//tmp/**)",
+      "Bash(find \"/c/Users/Pedruca/Documents/NetBeansProjects/meseros/img/iconos\" -iname \"*mesa*\" -o -iname \"*ocup*\" -o -iname \"*libre*\" -o -iname \"*disponib*\" 2>/dev/null)",
+      "Read(//c/Users/Pedruca/Documents/NetBeansProjects/meseros/img/iconos/**)",
+      "Bash(grep -A16 'BARRA2<' /tmp/mesas3.html | head -20)"
     ]
   }
 }

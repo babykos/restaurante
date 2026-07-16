@@ -4,12 +4,15 @@ const { getDefaults } = require('./propinas');
 async function mapaDeMesas() {
   const [rows] = await pool.query(
     `SELECT m.mesaid, m.nomesa, m.zonaid, z.zona, z.hex, m.reservaidasignada,
-            rm.usuarioid AS duenoid, u.usuario AS dueno
+            rm.usuarioid AS duenoid, u.usuario AS dueno,
+            GROUP_CONCAT(cm.nombrecuenta ORDER BY cm.cuentamesaid SEPARATOR ', ') AS cuentas
      FROM mesas m
      JOIN zonas z ON z.zonaid = m.zonaid
      LEFT JOIN reservamesa rm ON rm.reservaid = m.reservaidasignada
      LEFT JOIN usuarios u ON u.usuarioid = rm.usuarioid
+     LEFT JOIN cuentamesa cm ON cm.reservaid = rm.reservaid AND cm.inactiva = 0
      WHERE m.activa = 1 AND z.activa = 1
+     GROUP BY m.mesaid, m.nomesa, m.zonaid, z.zona, z.hex, m.reservaidasignada, rm.usuarioid, u.usuario
      ORDER BY z.zona, m.nomesa`
   );
   return rows;
@@ -27,6 +30,20 @@ async function cuentasDeMesa(mesaid) {
     { mesaid }
   );
   return rows;
+}
+
+async function contextoMesa(mesaid) {
+  const [rows] = await pool.query(
+    `SELECT m.mesaid, m.nomesa, z.zona, m.reservaidasignada AS reservaid,
+            rm.usuarioid AS duenoid, u.usuario AS dueno
+     FROM mesas m
+     JOIN zonas z ON z.zonaid = m.zonaid
+     LEFT JOIN reservamesa rm ON rm.reservaid = m.reservaidasignada
+     LEFT JOIN usuarios u ON u.usuarioid = rm.usuarioid
+     WHERE m.mesaid = :mesaid`,
+    { mesaid }
+  );
+  return rows.length ? rows[0] : null;
 }
 
 async function duenoDeMesa(mesaid) {
@@ -93,4 +110,30 @@ async function abrirMesa(mesaid, usuarioid, nombrecuenta) {
   }
 }
 
-module.exports = { mapaDeMesas, cuentasDeMesa, duenoDeMesa, abrirMesa };
+async function abrirSubcuenta(mesaid, nombrecuenta) {
+  const [[mesa]] = await pool.query('SELECT reservaidasignada FROM mesas WHERE mesaid = :mesaid', {
+    mesaid,
+  });
+  if (!mesa || !mesa.reservaidasignada) {
+    throw Object.assign(new Error('La mesa no tiene una reserva activa'), { status: 400 });
+  }
+
+  const { propina, ppropina } = await getDefaults();
+
+  const [insCuenta] = await pool.query(
+    `INSERT INTO cuentamesa (reservaid, nombrecuenta, inactiva, propina, ppropina, enviadacaja, creacion)
+     VALUES (:reservaid, :nombrecuenta, 0, :propina, :ppropina, 0, NOW())`,
+    { reservaid: mesa.reservaidasignada, nombrecuenta, propina: propina ? 1 : 0, ppropina }
+  );
+
+  return insCuenta.insertId;
+}
+
+module.exports = {
+  mapaDeMesas,
+  cuentasDeMesa,
+  contextoMesa,
+  duenoDeMesa,
+  abrirMesa,
+  abrirSubcuenta,
+};

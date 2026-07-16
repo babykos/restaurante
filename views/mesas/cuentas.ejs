@@ -3,37 +3,136 @@
 <head>
   <%- include('../partials/head', { title: 'Cuentas de mesa - CODEBYTES' }) %>
 </head>
-<body>
+<body class="bg-slate-100">
   <%- include('../partials/topbar', { user }) %>
-  <div class="app-shell">
+  <div class="flex pt-16 min-h-screen">
     <%- include('../partials/sidebar', { user, activo: 'mesas' }) %>
 
-    <div class="app-content">
-      <main>
-        <div class="content-header">
+    <div class="flex-1 flex flex-col min-h-[calc(100vh-4rem)] lg:ml-64">
+      <main class="p-5 flex-1">
+        <div class="bg-white rounded-lg shadow-sm px-5 py-4 flex flex-wrap justify-between items-start gap-2 mb-5">
           <div>
-            <h1>Cuentas</h1>
-            <p class="muted">Cuentas activas de esta mesa</p>
+            <h1 class="text-xl font-bold text-slate-800"><%= mesa.nomesa %></h1>
+            <p class="text-slate-500 text-sm mt-1">Cuentas activas de esta mesa</p>
           </div>
-          <nav class="breadcrumb">
-            <a href="/mesas"><i class="fa-solid fa-house"></i> Home</a> <i class="fa-solid fa-chevron-right"></i> Cuentas
+          <nav class="text-sm text-slate-500 flex items-center gap-2 flex-wrap">
+            <a href="/mesas" class="text-sky-600 hover:underline"><i class="fa-solid fa-house"></i> Home</a>
+            <i class="fa-solid fa-chevron-right text-xs"></i> Cuentas
           </nav>
         </div>
 
+        <div class="flex flex-col sm:flex-row gap-3 mb-5">
+          <details class="relative flex-1">
+            <summary class="list-none cursor-pointer bg-white border border-slate-300 text-slate-700 hover:bg-slate-50
+                             text-sm font-medium rounded-md px-4 py-2.5 flex items-center justify-center gap-2">
+              <i class="fa-solid fa-circle-plus"></i> Nueva cuenta
+            </summary>
+            <form method="POST" action="/mesas/<%= mesa.mesaid %>/cuentas"
+              class="absolute z-10 mt-2 bg-white border border-slate-200 rounded-md shadow-lg p-3 flex gap-2 w-72 max-w-[90vw]">
+              <input type="text" name="nombrecuenta" required placeholder="Nombre de la cuenta"
+                class="flex-1 border border-slate-300 rounded-md px-2 py-1.5 text-sm">
+              <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md px-3">
+                Crear
+              </button>
+            </form>
+          </details>
+
+          <details class="relative flex-1">
+            <summary class="list-none cursor-pointer bg-white border border-slate-300 text-slate-700 hover:bg-slate-50
+                             text-sm font-medium rounded-md px-4 py-2.5 flex items-center justify-center gap-2">
+              <i class="fa-solid fa-right-left"></i> Trasladar a mesero
+            </summary>
+            <form method="POST" action="/mesas/<%= mesa.mesaid %>/trasladar"
+              class="absolute z-10 mt-2 bg-white border border-slate-200 rounded-md shadow-lg p-3 flex gap-2 w-72 max-w-[90vw]">
+              <select name="recibeId" required class="flex-1 border border-slate-300 rounded-md px-2 py-1.5 text-sm">
+                <option value="" disabled selected>Elegí un mesero</option>
+                <% usuariosParaTraslado.forEach((u) => { %>
+                  <option value="<%= u.usuarioid %>"><%= u.usuario %></option>
+                <% }) %>
+              </select>
+              <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md px-3">
+                Enviar
+              </button>
+            </form>
+          </details>
+
+          <a href="/mesas"
+            class="flex-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium
+                   rounded-md px-4 py-2.5 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i> Regresar
+          </a>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm px-5 py-3 text-sm text-slate-600 border-l-4 border-sky-500 mb-5">
+          <strong>Zona:</strong> <%= mesa.zona %> &nbsp;|&nbsp;
+          <strong>Mesa:</strong> <%= mesa.nomesa %> &nbsp;|&nbsp;
+          <strong>Usuario:</strong> <%= mesa.dueno %>
+        </div>
+
         <% if (cuentas.length === 0) { %>
-          <p class="sin-mesas">Esta mesa no tiene cuentas activas.</p>
+          <p class="text-slate-500">Esta mesa no tiene cuentas activas.</p>
         <% } %>
-        <ul class="lista-cuentas">
+
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
           <% cuentas.forEach((c) => { %>
-            <li>
-              <a href="/cuentas/<%= c.cuentamesaid %>">
-                <i class="fa-solid fa-receipt"></i>
-                <span><%= c.nombrecuenta %></span>
-                <% if (c.enviadacaja) { %><span class="badge">enviada a caja</span><% } %>
+            <article class="bg-white rounded-lg shadow-sm border-t-4 border-sky-500 overflow-hidden flex flex-col">
+              <header class="px-4 py-2.5 font-bold text-sm border-b border-slate-100 flex justify-between items-center">
+                <span>Cuenta → <%= c.nombrecuenta %></span>
+                <% if (c.enviadacaja) { %>
+                  <span class="bg-amber-100 text-amber-800 text-xs rounded px-2 py-0.5">enviada a caja</span>
+                <% } %>
+              </header>
+
+              <a href="/cuentas/<%= c.cuentamesaid %>"
+                class="m-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-md py-2.5
+                       flex items-center justify-center gap-2">
+                <i class="fa-solid fa-clipboard-list"></i> Nuevo pedido
               </a>
-            </li>
+
+              <div class="px-4 flex-1">
+                <% if (c.pedido.lineas.length === 0) { %>
+                  <p class="text-slate-400 text-sm py-2">Sin productos todavía.</p>
+                <% } else { %>
+                  <table class="w-full text-sm">
+                    <thead>
+                      <tr class="text-left text-slate-500">
+                        <th class="py-1.5 pr-2">Cant.</th><th class="py-1.5 pr-2">Producto</th><th class="py-1.5 pr-2">Precio</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% c.pedido.lineas.forEach((l) => { %>
+                        <tr class="border-t border-slate-100">
+                          <td class="py-1.5 pr-2"><%= l.cantidad %></td>
+                          <td class="py-1.5 pr-2"><%= l.producto %></td>
+                          <td class="py-1.5 pr-2"><%= l.precio.toFixed(2) %></td>
+                        </tr>
+                      <% }) %>
+                    </tbody>
+                  </table>
+                <% } %>
+              </div>
+
+              <p class="px-4 py-2 text-sm font-semibold text-right">Total: <%= c.pedido.total.toFixed(2) %></p>
+
+              <div class="p-3 pt-0 grid grid-cols-2 gap-2">
+                <form method="POST" action="/cuentas/<%= c.cuentamesaid %>/proforma">
+                  <button type="submit"
+                    class="w-full bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm
+                           font-medium rounded-md py-2 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-file-invoice"></i> Proforma
+                  </button>
+                </form>
+                <form method="POST" action="/cuentas/<%= c.cuentamesaid %>/enviar-caja">
+                  <button type="submit"
+                    class="w-full bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md py-2
+                           flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-cash-register"></i> Caja
+                  </button>
+                </form>
+              </div>
+            </article>
           <% }) %>
-        </ul>
+        </div>
       </main>
 
       <%- include('../partials/footer') %>

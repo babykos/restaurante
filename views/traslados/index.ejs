@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('../partials/head', { title: 'Traslados - CODEBYTES' }) %>
+</head>
+<body class="bg-slate-100">
+  <%- include('../partials/topbar', { user }) %>
+  <div class="flex pt-16 min-h-screen">
+    <%- include('../partials/sidebar', { user, activo: 'traslados' }) %>
+
+    <div class="flex-1 flex flex-col min-h-[calc(100vh-4rem)] lg:ml-64">
+      <main class="p-5 flex-1">
+        <div class="bg-white rounded-lg shadow-sm px-5 py-4 flex flex-wrap justify-between items-start gap-2 mb-5">
+          <div>
+            <h1 class="text-xl font-bold text-slate-800">Traslados de mesero</h1>
+            <p class="text-slate-500 text-sm mt-1">Solicitudes de traslado de mesas entre meseros</p>
+          </div>
+          <nav class="text-sm text-slate-500 flex items-center gap-2 flex-wrap">
+            <a href="/mesas" class="text-sky-600 hover:underline"><i class="fa-solid fa-house"></i> Home</a>
+            <i class="fa-solid fa-chevron-right text-xs"></i> Traslados
+          </nav>
+        </div>
+
+        <section class="bg-white rounded-lg shadow-sm p-5 mb-5">
+          <h2 class="text-lg font-semibold flex items-center gap-2 mb-3">
+            <i class="fa-solid fa-inbox text-sky-600"></i> Solicitudes recibidas
+          </h2>
+          <% if (recibidos.length === 0) { %>
+            <p class="text-slate-500 text-sm">No tenés traslados pendientes por aceptar.</p>
+          <% } else { %>
+            <ul class="flex flex-col gap-2">
+              <% recibidos.forEach((t) => { %>
+                <li class="flex flex-wrap items-center justify-between gap-2 border border-slate-200 rounded-md px-4 py-3">
+                  <div class="text-sm">
+                    <strong><%= t.nomesa %></strong> (<%= t.zona %>) — de <strong><%= t.solicitante %></strong>
+                    <span class="block text-xs text-slate-400"><%= new Date(t.fechasolicita).toLocaleString('es-HN') %></span>
+                  </div>
+                  <form method="POST" action="/traslados/<%= t.trasladoid %>/aceptar">
+                    <button type="submit"
+                      class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-md px-4 py-2">
+                      <i class="fa-solid fa-check"></i> Aceptar
+                    </button>
+                  </form>
+                </li>
+              <% }) %>
+            </ul>
+          <% } %>
+        </section>
+
+        <section class="bg-white rounded-lg shadow-sm p-5">
+          <h2 class="text-lg font-semibold flex items-center gap-2 mb-3">
+            <i class="fa-solid fa-paper-plane text-sky-600"></i> Solicitudes enviadas
+          </h2>
+          <% if (enviados.length === 0) { %>
+            <p class="text-slate-500 text-sm">No tenés traslados pendientes de que otro mesero acepte.</p>
+          <% } else { %>
+            <ul class="flex flex-col gap-2">
+              <% enviados.forEach((t) => { %>
+                <li class="text-sm border border-slate-200 rounded-md px-4 py-3">
+                  <strong><%= t.nomesa %></strong> (<%= t.zona %>) — para <strong><%= t.destino %></strong>
+                  <span class="block text-xs text-slate-400"><%= new Date(t.fechasolicita).toLocaleString('es-HN') %></span>
+                </li>
+              <% }) %>
+            </ul>
+          <% } %>
+        </section>
+      </main>
+
+      <%- include('../partials/footer') %>
+    </div>
+  </div>
+  <%- include('../partials/layout-scripts') %>
+</body>
+</html>

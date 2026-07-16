@@ -7,6 +7,7 @@ const session = require('express-session');
 const authRoutes = require('./routes/auth');
 const mesasRoutes = require('./routes/mesas');
 const cuentasRoutes = require('./routes/cuentas');
+const trasladosRoutes = require('./routes/traslados');
 const { requireAuth } = require('./middleware/auth');
 
 const app = express();
@@ -29,6 +30,7 @@ app.use(
 app.use('/', authRoutes);
 app.use('/mesas', mesasRoutes);
 app.use('/cuentas', cuentasRoutes);
+app.use('/traslados', trasladosRoutes);
 
 app.get('/', requireAuth, (req, res) => {
   res.redirect('/mesas');

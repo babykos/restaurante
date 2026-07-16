@@ -1,16 +1,29 @@
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-user">
-    <i class="fa-solid fa-circle-user"></i>
+<aside id="sidebar"
+  class="fixed top-16 bottom-0 left-0 w-64 bg-slate-900 text-slate-300 overflow-y-auto z-40
+         -translate-x-full transition-transform duration-200 lg:translate-x-0">
+  <div class="flex items-center gap-3 p-4 border-b border-white/10">
+    <i class="fa-solid fa-circle-user text-3xl text-slate-400"></i>
     <div>
-      <strong><%= user.usuario %></strong>
-      <span class="estado-online"><i class="fa-solid fa-circle"></i> Online</span>
+      <strong class="block text-white text-sm"><%= user.usuario %></strong>
+      <span class="text-xs text-emerald-400"><i class="fa-solid fa-circle text-[6px] mr-1"></i>Online</span>
     </div>
   </div>
-  <p class="sidebar-titulo">Opciones principales</p>
-  <nav class="sidebar-nav">
-    <a href="/mesas" class="<%= typeof activo !== 'undefined' && activo === 'mesas' ? 'activo' : '' %>">
+  <p class="uppercase text-[11px] tracking-wide text-slate-500 px-4 pt-4 pb-1">Opciones principales</p>
+  <nav class="flex flex-col">
+    <a href="/mesas"
+      class="flex items-center gap-3 px-4 py-3 text-sm border-l-[3px] hover:bg-white/5 hover:text-white
+        <%= typeof activo !== 'undefined' && activo === 'mesas'
+          ? 'border-sky-500 bg-white/5 text-white'
+          : 'border-transparent text-slate-300' %>">
       <i class="fa-solid fa-table-cells"></i> Mapa de Mesas
+    </a>
+    <a href="/traslados"
+      class="flex items-center gap-3 px-4 py-3 text-sm border-l-[3px] hover:bg-white/5 hover:text-white
+        <%= typeof activo !== 'undefined' && activo === 'traslados'
+          ? 'border-sky-500 bg-white/5 text-white'
+          : 'border-transparent text-slate-300' %>">
+      <i class="fa-solid fa-right-left"></i> Traslados
     </a>
   </nav>
 </aside>
-<div class="sidebar-overlay" id="sidebar-overlay"></div>
+<div id="sidebar-overlay" class="hidden fixed inset-0 top-16 bg-black/50 z-30 lg:hidden"></div>

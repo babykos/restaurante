@@ -3,32 +3,43 @@
 <head>
   <%- include('partials/head', { title: 'Iniciar sesión - CODEBYTES' }) %>
 </head>
-<body class="pagina-login">
-  <main class="login-box">
-    <img class="login-logo" src="/images/logo-codebytes.png" alt="CODEBYTES">
-    <p class="login-subtitulo">Control de mesas para meseros</p>
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
+  <main class="w-full max-w-sm m-6 rounded-2xl overflow-hidden shadow-2xl">
+    <div class="bg-slate-900 flex justify-center py-8">
+      <img src="/images/logo-codebytes.png" alt="CODEBYTES" class="h-15">
+    </div>
+    <div class="bg-white p-8">
+      <p class="text-center text-sky-600 text-sm mb-6">Administracion de restaurantes</p>
 
-    <% if (error) { %>
-      <p class="error"><i class="fa-solid fa-triangle-exclamation"></i> <%= error %></p>
-    <% } %>
+      <% if (error) { %>
+        <p class="bg-rose-100 text-rose-700 text-sm rounded-md px-3 py-2 mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation"></i> <%= error %>
+        </p>
+      <% } %>
 
-    <form method="POST" action="/login">
-      <label>
-        <span>Usuario</span>
-        <div class="input-icono">
-          <i class="fa-solid fa-user"></i>
-          <input type="text" name="usuario" autocomplete="username" required autofocus>
-        </div>
-      </label>
-      <label>
-        <span>Clave</span>
-        <div class="input-icono">
-          <i class="fa-solid fa-lock"></i>
-          <input type="password" name="clave" autocomplete="current-password" required>
-        </div>
-      </label>
-      <button type="submit"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
-    </form>
+      <form method="POST" action="/login" class="space-y-4">
+        <label class="block text-sm text-slate-700">
+          <span class="block font-semibold mb-1">Usuario</span>
+          <div class="flex items-center border border-slate-300 rounded-md px-3 focus-within:ring-2 focus-within:ring-sky-500">
+            <i class="fa-solid fa-user text-slate-400 mr-2"></i>
+            <input type="text" name="usuario" autocomplete="username" required autofocus
+              class="border-0 outline-none py-2.5 flex-1 text-base">
+          </div>
+        </label>
+        <label class="block text-sm text-slate-700">
+          <span class="block font-semibold mb-1">Clave</span>
+          <div class="flex items-center border border-slate-300 rounded-md px-3 focus-within:ring-2 focus-within:ring-sky-500">
+            <i class="fa-solid fa-lock text-slate-400 mr-2"></i>
+            <input type="password" name="clave" autocomplete="current-password" required
+              class="border-0 outline-none py-2.5 flex-1 text-base">
+          </div>
+        </label>
+        <button type="submit"
+          class="w-full bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-md py-2.5 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-right-to-bracket"></i> Entrar
+        </button>
+      </form>
+    </div>
   </main>
 </body>
 </html>

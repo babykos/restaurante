@@ -3,36 +3,40 @@
 <head>
   <%- include('../partials/head', { title: 'Control de Mesas - CODEBYTES' }) %>
 </head>
-<body>
+<body class="bg-slate-100">
   <%- include('../partials/topbar', { user }) %>
-  <div class="app-shell">
+  <div class="flex pt-16 min-h-screen">
     <%- include('../partials/sidebar', { user, activo: 'mesas' }) %>
 
-    <div class="app-content">
-      <main>
-        <div class="content-header">
+    <div class="flex-1 flex flex-col min-h-[calc(100vh-4rem)] lg:ml-64">
+      <main class="p-5 flex-1">
+        <div class="bg-white rounded-lg shadow-sm px-5 py-4 flex flex-wrap justify-between items-start gap-2 mb-5">
           <div>
-            <h1>Control de Mesas</h1>
-            <p class="muted">En esta área se manejan las mesas de los meseros</p>
+            <h1 class="text-xl font-bold text-slate-800">Control de Mesas</h1>
+            <p class="text-slate-500 text-sm mt-1">En esta área se manejan las mesas de los meseros</p>
           </div>
-          <nav class="breadcrumb">
-            <i class="fa-solid fa-house"></i> Home <i class="fa-solid fa-chevron-right"></i> Control de Mesas
+          <nav class="text-sm text-slate-500 flex items-center gap-2 flex-wrap">
+            <i class="fa-solid fa-house"></i> Home <i class="fa-solid fa-chevron-right text-xs"></i> Control de Mesas
           </nav>
         </div>
 
-        <div class="tabs">
-          <button type="button" class="tab activo" data-tab="mias">
-            <i class="fa-solid fa-table-cells"></i> Mis mesas
+        <div class="flex gap-2 overflow-x-auto pb-1 mb-5">
+          <button type="button" data-tab="mias"
+            class="tab flex-none px-4 py-2.5 rounded-md border text-sm font-semibold whitespace-nowrap
+                   bg-sky-600 border-sky-600 text-white">
+            <i class="fa-solid fa-table-cells mr-1.5"></i> Mis mesas
           </button>
           <% zonas.forEach((z) => { %>
-            <button type="button" class="tab" data-tab="zona-<%= z.zonaid %>"><%= z.zona %></button>
+            <button type="button" data-tab="zona-<%= z.zonaid %>"
+              class="tab flex-none px-4 py-2.5 rounded-md border text-sm font-semibold whitespace-nowrap
+                     bg-white border-slate-300 text-slate-700"><%= z.zona %></button>
           <% }) %>
         </div>
 
-        <section class="grid-mesas" data-panel="mias">
+        <section data-panel="mias" class="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
           <% const mias = zonas.flatMap(z => z.mesas.filter(m => m.estado === 'mia')); %>
           <% if (mias.length === 0) { %>
-            <p class="sin-mesas">No tenés mesas abiertas. Elegí una zona para abrir una mesa libre.</p>
+            <p class="text-slate-500 col-span-full">No tenés mesas abiertas. Elegí una zona para abrir una mesa libre.</p>
           <% } %>
           <% mias.forEach((m) => { %>
             <%- include('../partials/mesa-card', { m }) %>
@@ -40,7 +44,7 @@
         </section>
 
         <% zonas.forEach((z) => { %>
-          <section class="grid-mesas oculto" data-panel="zona-<%= z.zonaid %>">
+          <section data-panel="zona-<%= z.zonaid %>" class="hidden grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
             <% z.mesas.forEach((m) => { %>
               <%- include('../partials/mesa-card', { m }) %>
             <% }) %>
@@ -56,10 +60,14 @@
   <script>
     document.querySelectorAll('.tab').forEach((btn) => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach((b) => b.classList.remove('activo'));
-        document.querySelectorAll('[data-panel]').forEach((p) => p.classList.add('oculto'));
-        btn.classList.add('activo');
-        document.querySelector(`[data-panel="${btn.dataset.tab}"]`).classList.remove('oculto');
+        document.querySelectorAll('.tab').forEach((b) => {
+          b.classList.remove('bg-sky-600', 'border-sky-600', 'text-white');
+          b.classList.add('bg-white', 'border-slate-300', 'text-slate-700');
+        });
+        document.querySelectorAll('[data-panel]').forEach((p) => p.classList.add('hidden'));
+        btn.classList.remove('bg-white', 'border-slate-300', 'text-slate-700');
+        btn.classList.add('bg-sky-600', 'border-sky-600', 'text-white');
+        document.querySelector(`[data-panel="${btn.dataset.tab}"]`).classList.remove('hidden');
       });
     });
   </script>

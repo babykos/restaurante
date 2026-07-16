@@ -1,28 +1,41 @@
-<article class="card-mesa">
-  <header><%= m.nomesa %></header>
-  <div class="card-mesa-body">
-    <img src="/images/mesa.png" alt="">
-    <div class="card-mesa-info">
+<article class="bg-white rounded-lg shadow-sm border-t-4 border-sky-500 overflow-hidden">
+  <header class="px-4 py-2.5 font-bold text-sm border-b border-slate-100"><%= m.nomesa %></header>
+  <div class="p-4 flex items-center gap-3 flex-wrap">
+    <img src="/images/mesa.png" alt="" class="w-12 h-12 object-contain <%= m.estado !== 'libre' ? 'grayscale-[40%]' : '' %>">
+    <div class="flex-1 min-w-[110px] flex flex-col text-xs gap-0.5">
       <% if (m.estado === 'libre') { %>
-        <strong class="estado-libre">MESA DISPONIBLE</strong>
-        <span>Mesero: Disponible</span>
-      <% } else if (m.estado === 'mia') { %>
-        <strong class="estado-mia">MESA OCUPADA</strong>
-        <span>Mesero: Vos</span>
+        <strong class="text-emerald-600 flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-check"></i> MESA DISPONIBLE
+        </strong>
+        <span class="text-slate-500">Mesero: Disponible</span>
       <% } else { %>
-        <strong class="estado-ocupada">MESA OCUPADA</strong>
-        <span>Mesero: <%= m.dueno %></span>
+        <% const color = m.estado === 'mia' ? 'text-sky-600' : 'text-rose-600'; %>
+        <strong class="<%= color %> flex items-center gap-1.5">
+          <i class="fa-solid fa-lock"></i> MESA OCUPADA
+        </strong>
+        <span class="text-slate-500">Mesero: <%= m.dueno %></span>
+        <% if (m.cuentas) { %>
+          <span class="text-slate-500"><i class="fa-solid fa-receipt"></i> <%= m.cuentas %></span>
+        <% } %>
       <% } %>
     </div>
     <% if (m.estado === 'libre') { %>
-      <form method="POST" action="/mesas/<%= m.mesaid %>/abrir" class="form-abrir">
-        <input type="text" name="nombrecuenta" placeholder="Nombre cuenta" value="<%= m.nomesa %>">
-        <button type="submit">Entrar</button>
+      <form method="POST" action="/mesas/<%= m.mesaid %>/abrir" class="w-full">
+        <input type="hidden" name="nombrecuenta" value="<%= m.nomesa %>">
+        <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white text-xs font-medium rounded px-3 py-1.5">
+          Entrar
+        </button>
       </form>
     <% } else if (m.estado === 'mia') { %>
-      <a class="btn-entrar" href="/mesas/<%= m.mesaid %>/cuentas">Entrar</a>
+      <a href="/mesas/<%= m.mesaid %>/cuentas"
+        class="bg-sky-600 hover:bg-sky-700 text-white text-xs font-medium rounded px-3 py-1.5">
+        Entrar
+      </a>
     <% } else { %>
-      <button type="button" class="btn-entrar" disabled>Ocupada</button>
+      <button type="button" disabled
+        class="bg-slate-400 text-white text-xs font-medium rounded px-3 py-1.5 cursor-not-allowed">
+        Ocupada
+      </button>
     <% } %>
   </div>
 </article>

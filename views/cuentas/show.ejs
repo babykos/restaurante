@@ -3,94 +3,123 @@
 <head>
   <%- include('../partials/head', { title: cuenta.nombrecuenta + ' - CODEBYTES' }) %>
 </head>
-<body>
+<body class="bg-slate-100">
   <%- include('../partials/topbar', { user }) %>
-  <div class="app-shell">
+  <div class="flex pt-16 min-h-screen">
     <%- include('../partials/sidebar', { user, activo: 'mesas' }) %>
 
-    <div class="app-content">
-      <main>
-        <div class="content-header">
+    <div class="flex-1 flex flex-col min-h-[calc(100vh-4rem)] lg:ml-64">
+      <main class="p-5 flex-1">
+        <div class="bg-white rounded-lg shadow-sm px-5 py-4 flex flex-wrap justify-between items-start gap-2 mb-5">
           <div>
-            <h1><%= cuenta.nomesa %> — <%= cuenta.nombrecuenta %></h1>
-            <p class="muted"><%= cuenta.zona %><% if (cuenta.enviadacaja) { %> · Enviada a caja<% } %></p>
+            <h1 class="text-xl font-bold text-slate-800"><%= cuenta.nomesa %> — <%= cuenta.nombrecuenta %></h1>
+            <p class="text-slate-500 text-sm mt-1">
+              <%= cuenta.zona %><% if (cuenta.enviadacaja) { %> · Enviada a caja<% } %>
+            </p>
           </div>
-          <nav class="breadcrumb">
-            <a href="/mesas"><i class="fa-solid fa-house"></i> Home</a> <i class="fa-solid fa-chevron-right"></i>
-            <a href="/mesas/<%= cuenta.mesaid %>/cuentas">Cuentas</a> <i class="fa-solid fa-chevron-right"></i> <%= cuenta.nombrecuenta %>
+          <nav class="text-sm text-slate-500 flex items-center gap-2 flex-wrap">
+            <a href="/mesas" class="text-sky-600 hover:underline"><i class="fa-solid fa-house"></i> Home</a>
+            <i class="fa-solid fa-chevron-right text-xs"></i>
+            <a href="/mesas/<%= cuenta.mesaid %>/cuentas" class="text-sky-600 hover:underline">Cuentas</a>
+            <i class="fa-solid fa-chevron-right text-xs"></i> <%= cuenta.nombrecuenta %>
           </nav>
         </div>
 
-        <section class="panel">
-          <h2><i class="fa-solid fa-clipboard-list"></i> Pedido</h2>
+        <section class="bg-white rounded-lg shadow-sm p-5 mb-5">
+          <h2 class="text-lg font-semibold flex items-center gap-2 mb-3">
+            <i class="fa-solid fa-clipboard-list text-sky-600"></i> Pedido
+          </h2>
           <% if (pedido.lineas.length === 0) { %>
-            <p>Sin productos todavía.</p>
+            <p class="text-slate-500">Sin productos todavía.</p>
           <% } else { %>
-            <div class="tabla-scroll">
-              <table class="tabla-pedido">
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[480px] border-collapse text-sm">
                 <thead>
-                  <tr><th>#Pedido</th><th>Producto</th><th>Cant.</th><th>Precio</th><th>ISV%</th><th>Nota</th></tr>
+                  <tr class="text-left text-slate-500">
+                    <th class="py-2 pr-2">#Pedido</th><th class="py-2 pr-2">Producto</th>
+                    <th class="py-2 pr-2">Cant.</th><th class="py-2 pr-2">Precio</th>
+                    <th class="py-2 pr-2">ISV%</th><th class="py-2 pr-2">Nota</th>
+                  </tr>
                 </thead>
                 <tbody>
                   <% pedido.lineas.forEach((l) => { %>
-                    <tr>
-                      <td><%= l.nopedido %></td>
-                      <td><%= l.producto %><% if (l.cortesia) { %> (cortesía)<% } %></td>
-                      <td><%= l.cantidad %></td>
-                      <td><%= l.precio.toFixed(2) %></td>
-                      <td><%= l.porcentajeisv %></td>
-                      <td><%= l.descripcion %></td>
+                    <tr class="border-t border-slate-100">
+                      <td class="py-2 pr-2"><%= l.nopedido %></td>
+                      <td class="py-2 pr-2"><%= l.producto %><% if (l.cortesia) { %> (cortesía)<% } %></td>
+                      <td class="py-2 pr-2"><%= l.cantidad %></td>
+                      <td class="py-2 pr-2"><%= l.precio.toFixed(2) %></td>
+                      <td class="py-2 pr-2"><%= l.porcentajeisv %></td>
+                      <td class="py-2 pr-2"><%= l.descripcion %></td>
                     </tr>
                   <% }) %>
                 </tbody>
               </table>
             </div>
-            <p class="totales">
+            <p class="mt-3 text-sm">
               Subtotal: <%= pedido.subtotal.toFixed(2) %> —
               Impuesto: <%= pedido.impuesto.toFixed(2) %> —
-              <strong>Total: <%= pedido.total.toFixed(2) %></strong>
+              <strong class="text-base">Total: <%= pedido.total.toFixed(2) %></strong>
             </p>
           <% } %>
         </section>
 
         <% if (bloqueada) { %>
-          <p class="aviso"><i class="fa-solid fa-circle-exclamation"></i> Esta cuenta ya no admite cambios (facturada, inactiva o enviada a caja).</p>
+          <p class="bg-amber-100 text-amber-800 rounded-lg px-4 py-3 flex items-center gap-2">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            Esta cuenta ya no admite cambios (facturada, inactiva o enviada a caja).
+          </p>
         <% } else { %>
-        <section class="panel">
-          <h2><i class="fa-solid fa-utensils"></i> Agregar productos</h2>
-          <div class="catalogo">
-            <% let categoriaActual = null; %>
-            <% productos.forEach((p) => { %>
-              <% if (p.categoria !== categoriaActual) { categoriaActual = p.categoria; %>
-                <h3><%= categoriaActual %></h3>
-              <% } %>
-              <button type="button" class="producto-btn"
-                data-productoid="<%= p.productoid %>"
-                data-producto="<%= p.producto %>"
-                data-precio="<%= p.precioventa %>">
-                <%= p.producto %> — <%= Number(p.precioventa).toFixed(2) %>
-              </button>
-            <% }) %>
-          </div>
+        <section class="bg-white rounded-lg shadow-sm p-5 mb-5 text-center">
+          <p class="text-slate-500 text-sm">Cargarás pedidos a la cuenta de</p>
+          <p class="text-xl font-bold text-slate-800 mb-3"><%= cuenta.nombrecuenta %></p>
+          <a href="/mesas/<%= cuenta.mesaid %>/cuentas"
+            class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700
+                   text-sm font-medium rounded-md px-4 py-2.5">
+            <i class="fa-solid fa-chair"></i> Regresar a la mesa
+          </a>
+        </section>
 
-          <h3>Carrito</h3>
-          <ul id="carrito"></ul>
+        <section class="bg-white rounded-lg shadow-sm p-5 mb-5">
+          <div class="overflow-x-auto mb-4">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-slate-500 border-b border-slate-200">
+                  <th class="py-2 pr-2">Cant.</th><th class="py-2 pr-2">Producto</th>
+                  <th class="py-2 pr-2">Total</th><th class="py-2 pr-2 w-10">Acc</th>
+                </tr>
+              </thead>
+              <tbody id="carrito">
+                <tr id="carrito-vacio">
+                  <td colspan="4" class="py-4 text-center text-slate-400">No hay datos disponibles para la consulta</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
           <form id="form-pedido" method="POST" action="/cuentas/<%= cuenta.cuentamesaid %>/pedido">
             <input type="hidden" name="items" id="items-input">
-            <label>Comentarios <input type="text" name="comentarios"></label>
-            <label class="check"><input type="checkbox" name="llevar" value="1"> Para llevar</label>
-            <button type="submit" id="btn-enviar-pedido" disabled><i class="fa-solid fa-fire-burner"></i> Enviar comanda</button>
+            <label class="block text-sm my-2">
+              Comentarios
+              <input type="text" name="comentarios" class="block w-full border border-slate-300 rounded-md px-2 py-1.5 mt-1">
+            </label>
+            <label class="flex items-center gap-2 text-sm my-2">
+              <input type="checkbox" name="llevar" value="1"> Para llevar
+            </label>
+            <button type="submit" id="btn-enviar-pedido" disabled
+              class="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 disabled:bg-slate-400
+                     disabled:cursor-not-allowed hover:bg-emerald-700 text-white text-sm font-medium rounded-md py-3">
+              <i class="fa-solid fa-fire-burner"></i> Realizar pedido a cocina
+            </button>
           </form>
         </section>
 
-        <section class="acciones-cuenta">
-          <form method="POST" action="/cuentas/<%= cuenta.cuentamesaid %>/proforma">
-            <button type="submit" class="btn-secundario"><i class="fa-solid fa-file-invoice"></i> Generar proforma</button>
-          </form>
-          <form method="POST" action="/cuentas/<%= cuenta.cuentamesaid %>/enviar-caja">
-            <button type="submit" class="btn-primario"><i class="fa-solid fa-cash-register"></i> Enviar a caja</button>
-          </form>
+        <section class="bg-white rounded-lg shadow-sm overflow-hidden mb-5">
+          <button type="button" id="btn-inicio-categoria"
+            class="w-full bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium py-3 hidden">
+            <i class="fa-solid fa-arrow-left"></i> Inicio Categoría
+          </button>
+          <div id="categorias-grid" class="grid grid-cols-2 gap-3 p-4"></div>
+          <div id="productos-grid" class="grid grid-cols-2 gap-3 p-4 hidden"></div>
         </section>
         <% } %>
       </main>
@@ -101,40 +130,96 @@
 
   <%- include('../partials/layout-scripts') %>
   <script>
+    const productos = <%- JSON.stringify(typeof productos !== 'undefined' ? productos : []) %>;
     const carrito = [];
-    const listaEl = document.getElementById('carrito');
+
+    const carritoBody = document.getElementById('carrito');
     const itemsInput = document.getElementById('items-input');
     const btnEnviar = document.getElementById('btn-enviar-pedido');
 
-    function render() {
-      listaEl.innerHTML = '';
+    function renderCarrito() {
+      carritoBody.innerHTML = '';
+      if (carrito.length === 0) {
+        carritoBody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-400">No hay datos disponibles para la consulta</td></tr>';
+      }
       carrito.forEach((item, idx) => {
-        const li = document.createElement('li');
-        li.textContent = `${item.cantidad} x ${item.producto} `;
+        const tr = document.createElement('tr');
+        tr.className = 'border-t border-slate-100';
+        tr.innerHTML = `
+          <td class="py-1.5 pr-2">${item.cantidad}</td>
+          <td class="py-1.5 pr-2">${item.producto}</td>
+          <td class="py-1.5 pr-2">${(item.cantidad * item.precio).toFixed(2)}</td>
+          <td class="py-1.5 pr-2"></td>
+        `;
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.textContent = 'Quitar';
-        btn.onclick = () => { carrito.splice(idx, 1); render(); };
-        li.appendChild(btn);
-        listaEl.appendChild(li);
+        btn.className = 'text-rose-600 hover:text-rose-800';
+        btn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+        btn.onclick = () => { carrito.splice(idx, 1); renderCarrito(); };
+        tr.lastElementChild.appendChild(btn);
+        carritoBody.appendChild(tr);
       });
       itemsInput.value = JSON.stringify(carrito.map(({ productoid, cantidad }) => ({ productoid, cantidad })));
       btnEnviar.disabled = carrito.length === 0;
     }
 
-    document.querySelectorAll('.producto-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const productoid = Number(btn.dataset.productoid);
-        const producto = btn.dataset.producto;
-        const existente = carrito.find((i) => i.productoid === productoid);
-        if (existente) {
-          existente.cantidad += 1;
-        } else {
-          carrito.push({ productoid, producto, cantidad: 1 });
-        }
-        render();
-      });
+    document.getElementById('form-pedido').addEventListener('submit', (e) => {
+      const cantidadTotal = carrito.reduce((n, i) => n + i.cantidad, 0);
+      if (!confirm(`¿Confirmás enviar ${cantidadTotal} producto(s) a cocina?`)) {
+        e.preventDefault();
+      }
     });
+
+    function agregarAlCarrito(p) {
+      const existente = carrito.find((i) => i.productoid === p.productoid);
+      if (existente) {
+        existente.cantidad += 1;
+      } else {
+        carrito.push({ productoid: p.productoid, producto: p.producto, precio: Number(p.precioventa), cantidad: 1 });
+      }
+      renderCarrito();
+    }
+
+    const categoriasGrid = document.getElementById('categorias-grid');
+    const productosGrid = document.getElementById('productos-grid');
+    const btnInicioCategoria = document.getElementById('btn-inicio-categoria');
+
+    const categorias = [...new Map(productos.map((p) => [p.categoriaid, p.categoria])).entries()];
+
+    function mostrarCategorias() {
+      productosGrid.classList.add('hidden');
+      categoriasGrid.classList.remove('hidden');
+      btnInicioCategoria.classList.add('hidden');
+    }
+
+    function mostrarProductosDeCategoria(categoriaid, nombre) {
+      productosGrid.innerHTML = '';
+      productos
+        .filter((p) => p.categoriaid === categoriaid)
+        .forEach((p) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium rounded-md py-3 px-2';
+          btn.textContent = `${p.producto} — ${Number(p.precioventa).toFixed(2)}`;
+          btn.addEventListener('click', () => agregarAlCarrito(p));
+          productosGrid.appendChild(btn);
+        });
+      categoriasGrid.classList.add('hidden');
+      productosGrid.classList.remove('hidden');
+      btnInicioCategoria.classList.remove('hidden');
+      btnInicioCategoria.innerHTML = `<i class="fa-solid fa-arrow-left"></i> ${nombre}`;
+    }
+
+    categorias.forEach(([categoriaid, nombre]) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'bg-sky-400 hover:bg-sky-500 text-white text-sm font-medium rounded-md py-4 px-2';
+      btn.textContent = nombre;
+      btn.addEventListener('click', () => mostrarProductosDeCategoria(categoriaid, nombre));
+      categoriasGrid.appendChild(btn);
+    });
+
+    btnInicioCategoria.addEventListener('click', mostrarCategorias);
   </script>
 </body>
 </html>
