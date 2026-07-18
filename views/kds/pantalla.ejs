@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('../partials/head', { title: 'KDS - ' + estacion.zona }) %>
+</head>
+<body class="bg-slate-900 min-h-screen">
+  <header class="flex items-center gap-4 px-6 py-4 bg-slate-800 border-b border-slate-700">
+    <h1 class="text-2xl font-bold text-white whitespace-nowrap"><%= estacion.zona %></h1>
+    <form id="form-buscar" class="flex-1 flex gap-2">
+      <input type="text" inputmode="numeric" id="input-buscar" autofocus
+        placeholder="Escribí el # de pedido y presioná Enter"
+        class="flex-1 bg-slate-900 border-2 border-slate-700 focus:border-sky-500 outline-none text-white text-lg
+               rounded-xl px-4 py-2 placeholder:text-slate-500">
+      <button type="submit" class="bg-sky-600 hover:bg-sky-500 text-white rounded-xl px-4">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </button>
+    </form>
+    <div class="flex items-center gap-4 whitespace-nowrap">
+      <span id="reloj" class="text-slate-300 text-lg font-mono"></span>
+      <button type="button" id="btn-pantalla-completa" class="text-slate-400 hover:text-white text-sm">
+        <i class="fa-solid fa-expand"></i> Pantalla completa
+      </button>
+      <a href="/kds/<%= estacion.zonaid %>/historico" class="text-slate-400 hover:text-white text-sm">
+        <i class="fa-solid fa-clock-rotate-left"></i> Histórico
+      </a>
+      <a href="/kds" class="text-slate-400 hover:text-white text-sm">
+        <i class="fa-solid fa-arrow-left"></i> Cambiar estación
+      </a>
+    </div>
+  </header>
+
+  <main id="tickets" class="p-4 grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+    <p class="text-slate-500 col-span-full text-center py-10">Cargando pedidos...</p>
+  </main>
+
+  <dialog id="dialog-confirmar"
+    class="fixed inset-0 m-auto h-fit w-full max-w-md rounded-xl shadow-lg p-0 border-0 backdrop:bg-slate-900/70">
+    <div class="bg-slate-800 rounded-xl p-5 flex flex-col gap-3">
+      <h2 class="text-lg font-bold text-white flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-emerald-500"></i> Confirmar pedido listo
+      </h2>
+      <p id="confirmar-resumen" class="text-slate-300 text-sm"></p>
+      <ul id="confirmar-lineas" class="flex flex-col gap-1 text-white text-sm bg-slate-900/50 rounded-lg p-3"></ul>
+      <div class="flex justify-end gap-2 mt-2">
+        <button type="button" id="btn-cancelar-confirmar"
+          class="text-slate-300 hover:bg-slate-700 text-sm font-medium rounded-md px-4 py-2">
+          Cancelar
+        </button>
+        <button type="button" id="btn-aceptar-confirmar"
+          class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-md px-4 py-2">
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    const zonaid = <%= estacion.zonaid %>;
+    const ticketsEl = document.getElementById('tickets');
+    const relojEl = document.getElementById('reloj');
+    const inputBuscar = document.getElementById('input-buscar');
+
+    const dialogConfirmar = document.getElementById('dialog-confirmar');
+    const confirmarResumenEl = document.getElementById('confirmar-resumen');
+    const confirmarLineasEl = document.getElementById('confirmar-lineas');
+    const btnAceptarConfirmar = document.getElementById('btn-aceptar-confirmar');
+    const btnCancelarConfirmar = document.getElementById('btn-cancelar-confirmar');
+
+    let ticketsActuales = [];
+    let ticketPendiente = null;
+
+    const btnPantallaCompleta = document.getElementById('btn-pantalla-completa');
+
+    function actualizarBotonPantallaCompleta() {
+      const activa = Boolean(document.fullscreenElement);
+      btnPantallaCompleta.innerHTML = activa
+        ? '<i class="fa-solid fa-compress"></i> Salir de pantalla completa'
+        : '<i class="fa-solid fa-expand"></i> Pantalla completa';
+    }
+
+    btnPantallaCompleta.addEventListener('click', () => {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    });
+
+    document.addEventListener('fullscreenchange', actualizarBotonPantallaCompleta);
+
+    let audioCtx = null;
+    function obtenerAudioCtx() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      return audioCtx;
+    }
+    document.addEventListener('click', obtenerAudioCtx, { once: true });
+    document.addEventListener('keydown', obtenerAudioCtx, { once: true });
+
+    function sonarNuevoPedido() {
+      try {
+        const ctx = obtenerAudioCtx();
+        const ahora = ctx.currentTime;
+        [[880, ahora], [660, ahora + 0.15]].forEach(([frecuencia, inicio]) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(frecuencia, inicio);
+          gain.gain.setValueAtTime(0, inicio);
+          gain.gain.linearRampToValueAtTime(0.12, inicio + 0.02);
+          gain.gain.linearRampToValueAtTime(0, inicio + 0.25);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(inicio);
+          osc.stop(inicio + 0.25);
+        });
+      } catch (e) {
+        // Si el navegador bloquea audio, se ignora silenciosamente.
+      }
+    }
+
+    function actualizarReloj() {
+      relojEl.textContent = new Date().toLocaleTimeString('es-HN');
+    }
+    actualizarReloj();
+    setInterval(actualizarReloj, 1000);
+
+    function minutosTranscurridos(fecha) {
+      return Math.max(0, Math.floor((Date.now() - new Date(fecha).getTime()) / 60000));
+    }
+
+    function colorPorEdad(min) {
+      if (min >= 10) return 'border-rose-500';
+      if (min >= 5) return 'border-amber-400';
+      return 'border-slate-600';
+    }
+
+    function pedirConfirmacion(ticket) {
+      ticketPendiente = ticket;
+      confirmarResumenEl.textContent =
+        `Vas a marcar el pedido #${ticket.nopedido} - ${ticket.nomesa} (${ticket.mesero}) como listo.`;
+      confirmarLineasEl.innerHTML = ticket.lineas.map((l) => `
+        <li><span class="font-bold">${l.cantidad}x</span> ${l.producto}${l.cortesia ? ' (cortesía)' : ''}</li>
+      `).join('');
+      dialogConfirmar.showModal();
+      btnAceptarConfirmar.focus();
+    }
+
+    async function confirmarListo(ticket) {
+      ticketsActuales = ticketsActuales.filter((t) => t.pedidomesaid !== ticket.pedidomesaid);
+      renderTickets(ticketsActuales);
+      try {
+        await fetch(`/kds/${zonaid}/pedidos/${ticket.pedidomesaid}/listo`, { method: 'POST' });
+      } catch (e) {
+        cargarPedidos();
+      }
+    }
+
+    btnAceptarConfirmar.addEventListener('click', () => {
+      const ticket = ticketPendiente;
+      ticketPendiente = null;
+      dialogConfirmar.close();
+      if (ticket) confirmarListo(ticket);
+      inputBuscar.value = '';
+      inputBuscar.focus();
+    });
+
+    btnCancelarConfirmar.addEventListener('click', () => {
+      ticketPendiente = null;
+      dialogConfirmar.close();
+      inputBuscar.value = '';
+      inputBuscar.focus();
+    });
+
+    document.getElementById('form-buscar').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const valor = inputBuscar.value.trim();
+      if (!valor) return;
+
+      const ticket = ticketsActuales.find((t) => String(t.nopedido) === valor);
+      if (!ticket) {
+        alert(`No se encontró un pedido pendiente con el número ${valor}`);
+        inputBuscar.value = '';
+        inputBuscar.focus();
+        return;
+      }
+      pedirConfirmacion(ticket);
+    });
+
+    function renderTickets(pedidos) {
+      if (pedidos.length === 0) {
+        ticketsEl.innerHTML = '<p class="text-slate-500 col-span-full text-center py-10">Sin pedidos pendientes</p>';
+        return;
+      }
+
+      ticketsEl.innerHTML = '';
+      pedidos.forEach((p) => {
+        const min = minutosTranscurridos(p.fecha);
+        const card = document.createElement('article');
+        card.className = `bg-slate-800 border-2 ${colorPorEdad(min)} rounded-xl p-4 flex flex-col gap-2`;
+
+        const lineasHtml = p.lineas.map((l) => `
+          <li class="text-white">
+            <span class="font-bold">${l.cantidad}x</span> ${l.producto}${l.cortesia ? ' <span class=\"text-amber-400\">(cortesía)</span>' : ''}
+            ${l.descripcion && l.descripcion !== l.producto ? `<div class="text-slate-400 text-sm pl-4">${l.descripcion}</div>` : ''}
+          </li>
+        `).join('');
+
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-white font-bold text-lg">#${p.nopedido} · ${p.nomesa}</p>
+              <p class="text-slate-400 text-sm">${p.mesero}${p.llevar ? ' · <span class="text-sky-400">PARA LLEVAR</span>' : ''}</p>
+            </div>
+            <span class="text-sm font-mono text-slate-300">${min} min</span>
+          </div>
+          ${p.comentarios ? `<p class="text-amber-300 text-sm italic">"${p.comentarios}"</p>` : ''}
+          <ul class="flex flex-col gap-1.5 flex-1">${lineasHtml}</ul>
+          <button type="button" class="btn-listo bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg py-3 mt-2">
+            <i class="fa-solid fa-check"></i> LISTO
+          </button>
+        `;
+
+        card.querySelector('.btn-listo').addEventListener('click', () => pedirConfirmacion(p));
+
+        ticketsEl.appendChild(card);
+      });
+    }
+
+    let primeraCarga = true;
+
+    async function cargarPedidos() {
+      try {
+        const res = await fetch(`/kds/${zonaid}/pedidos`);
+        const pedidos = await res.json();
+
+        if (!primeraCarga) {
+          const idsAnteriores = new Set(ticketsActuales.map((t) => t.pedidomesaid));
+          const hayNuevo = pedidos.some((p) => !idsAnteriores.has(p.pedidomesaid));
+          if (hayNuevo) sonarNuevoPedido();
+        }
+        primeraCarga = false;
+
+        ticketsActuales = pedidos;
+        renderTickets(pedidos);
+      } catch (e) {
+        // Se reintenta en el siguiente ciclo; no se interrumpe el polling.
+      }
+    }
+
+    cargarPedidos();
+    setInterval(cargarPedidos, 4000);
+  </script>
+</body>
+</html>

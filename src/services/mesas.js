@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { getDefaults } = require('./propinas');
+const { RESTAURANTEID } = require('../config/restaurante');
 
 async function mapaDeMesas() {
   const [rows] = await pool.query(
@@ -11,9 +12,10 @@ async function mapaDeMesas() {
      LEFT JOIN reservamesa rm ON rm.reservaid = m.reservaidasignada
      LEFT JOIN usuarios u ON u.usuarioid = rm.usuarioid
      LEFT JOIN cuentamesa cm ON cm.reservaid = rm.reservaid AND cm.inactiva = 0
-     WHERE m.activa = 1 AND z.activa = 1
+     WHERE m.activa = 1 AND z.activa = 1 AND z.restauranteid = :restauranteid
      GROUP BY m.mesaid, m.nomesa, m.zonaid, z.zona, z.hex, m.reservaidasignada, rm.usuarioid, u.usuario
-     ORDER BY z.zona, m.nomesa`
+     ORDER BY z.zona, m.nomesa`,
+    { restauranteid: RESTAURANTEID }
   );
   return rows;
 }
@@ -23,11 +25,12 @@ async function cuentasDeMesa(mesaid) {
     `SELECT cm.cuentamesaid, cm.nombrecuenta, cm.inactiva, cm.enviadacaja, cm.nodocumento,
             rm.reservaid, rm.usuarioid AS duenoid
      FROM mesas m
+     JOIN zonas z ON z.zonaid = m.zonaid
      JOIN reservamesa rm ON rm.reservaid = m.reservaidasignada
      JOIN cuentamesa cm ON cm.reservaid = rm.reservaid
-     WHERE m.mesaid = :mesaid AND cm.inactiva = 0
+     WHERE m.mesaid = :mesaid AND cm.inactiva = 0 AND z.restauranteid = :restauranteid
      ORDER BY cm.cuentamesaid`,
-    { mesaid }
+    { mesaid, restauranteid: RESTAURANTEID }
   );
   return rows;
 }
@@ -40,8 +43,8 @@ async function contextoMesa(mesaid) {
      JOIN zonas z ON z.zonaid = m.zonaid
      LEFT JOIN reservamesa rm ON rm.reservaid = m.reservaidasignada
      LEFT JOIN usuarios u ON u.usuarioid = rm.usuarioid
-     WHERE m.mesaid = :mesaid`,
-    { mesaid }
+     WHERE m.mesaid = :mesaid AND z.restauranteid = :restauranteid`,
+    { mesaid, restauranteid: RESTAURANTEID }
   );
   return rows.length ? rows[0] : null;
 }
@@ -50,9 +53,10 @@ async function duenoDeMesa(mesaid) {
   const [rows] = await pool.query(
     `SELECT rm.usuarioid AS duenoid
      FROM mesas m
+     JOIN zonas z ON z.zonaid = m.zonaid
      JOIN reservamesa rm ON rm.reservaid = m.reservaidasignada
-     WHERE m.mesaid = :mesaid`,
-    { mesaid }
+     WHERE m.mesaid = :mesaid AND z.restauranteid = :restauranteid`,
+    { mesaid, restauranteid: RESTAURANTEID }
   );
   return rows.length ? rows[0].duenoid : null;
 }
@@ -63,8 +67,12 @@ async function abrirMesa(mesaid, usuarioid, nombrecuenta) {
     await conn.beginTransaction();
 
     const [[mesa]] = await conn.query(
-      'SELECT mesaid, reservaidasignada FROM mesas WHERE mesaid = :mesaid FOR UPDATE',
-      { mesaid }
+      `SELECT m.mesaid, m.reservaidasignada
+       FROM mesas m
+       JOIN zonas z ON z.zonaid = m.zonaid
+       WHERE m.mesaid = :mesaid AND z.restauranteid = :restauranteid
+       FOR UPDATE`,
+      { mesaid, restauranteid: RESTAURANTEID }
     );
     if (!mesa) {
       throw Object.assign(new Error('Mesa no existe'), { status: 404 });
@@ -111,9 +119,13 @@ async function abrirMesa(mesaid, usuarioid, nombrecuenta) {
 }
 
 async function abrirSubcuenta(mesaid, nombrecuenta) {
-  const [[mesa]] = await pool.query('SELECT reservaidasignada FROM mesas WHERE mesaid = :mesaid', {
-    mesaid,
-  });
+  const [[mesa]] = await pool.query(
+    `SELECT m.reservaidasignada
+     FROM mesas m
+     JOIN zonas z ON z.zonaid = m.zonaid
+     WHERE m.mesaid = :mesaid AND z.restauranteid = :restauranteid`,
+    { mesaid, restauranteid: RESTAURANTEID }
+  );
   if (!mesa || !mesa.reservaidasignada) {
     throw Object.assign(new Error('La mesa no tiene una reserva activa'), { status: 400 });
   }
@@ -145,8 +157,12 @@ async function eliminarMesaForzado(mesaid, usuario, comentario) {
     await conn.beginTransaction();
 
     const [[mesa]] = await conn.query(
-      'SELECT mesaid, reservaidasignada FROM mesas WHERE mesaid = :mesaid FOR UPDATE',
-      { mesaid }
+      `SELECT m.mesaid, m.reservaidasignada
+       FROM mesas m
+       JOIN zonas z ON z.zonaid = m.zonaid
+       WHERE m.mesaid = :mesaid AND z.restauranteid = :restauranteid
+       FOR UPDATE`,
+      { mesaid, restauranteid: RESTAURANTEID }
     );
     if (!mesa || !mesa.reservaidasignada) {
       throw Object.assign(new Error('Esta mesa no tiene una reserva activa'), { status: 400 });

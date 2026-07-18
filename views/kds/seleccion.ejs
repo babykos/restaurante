@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('../partials/head', { title: 'KDS - Elegir estación' }) %>
+</head>
+<body class="bg-slate-900 min-h-screen flex items-center justify-center p-6">
+  <div class="w-full max-w-2xl text-center">
+    <h1 class="text-3xl font-bold text-white mb-2">Pantalla de cocina</h1>
+    <p class="text-slate-400 mb-8">Elegí qué estación es esta pantalla</p>
+
+    <% if (estaciones.length === 0) { %>
+      <p class="text-slate-400">No hay estaciones configuradas en zonasdeimpresion.</p>
+    <% } else { %>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <% estaciones.forEach((e) => { %>
+          <a href="/kds/<%= e.zonaid %>"
+            class="bg-sky-600 hover:bg-sky-500 text-white text-2xl font-bold rounded-xl py-10 shadow-lg">
+            <%= e.zona %>
+          </a>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</body>
+</html>

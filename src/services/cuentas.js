@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { obtenerPrecioImpuesto, resolverAsistente } = require('./productos');
+const { RESTAURANTEID } = require('../config/restaurante');
 
 async function contexto(cuentamesaid) {
   const [rows] = await pool.query(
@@ -9,8 +10,8 @@ async function contexto(cuentamesaid) {
      JOIN reservamesa rm ON rm.reservaid = cm.reservaid
      JOIN mesas me ON me.mesaid = rm.mesaid
      JOIN zonas z ON z.zonaid = me.zonaid
-     WHERE cm.cuentamesaid = :cuentamesaid`,
-    { cuentamesaid }
+     WHERE cm.cuentamesaid = :cuentamesaid AND z.restauranteid = :restauranteid`,
+    { cuentamesaid, restauranteid: RESTAURANTEID }
   );
   return rows.length ? rows[0] : null;
 }

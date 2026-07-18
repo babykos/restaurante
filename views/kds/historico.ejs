@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('../partials/head', { title: 'KDS - Histórico ' + estacion.zona }) %>
+</head>
+<body class="bg-slate-900 min-h-screen">
+  <header class="flex items-center justify-between px-6 py-4 bg-slate-800 border-b border-slate-700">
+    <h1 class="text-2xl font-bold text-white">Histórico · <%= estacion.zona %></h1>
+    <a href="/kds/<%= estacion.zonaid %>" class="text-slate-400 hover:text-white text-sm">
+      <i class="fa-solid fa-arrow-left"></i> Volver a la pantalla
+    </a>
+  </header>
+
+  <main class="p-4 grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+    <% if (historico.length === 0) { %>
+      <p class="text-slate-500 col-span-full text-center py-10">Sin pedidos marcados como listos todavía.</p>
+    <% } else { %>
+      <% historico.forEach((t) => { %>
+        <article class="bg-slate-800 border-2 border-emerald-700/50 rounded-xl p-4 flex flex-col gap-2">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-white font-bold text-lg">#<%= t.nopedido %> · <%= t.nomesa %></p>
+              <p class="text-slate-400 text-sm"><%= t.mesero %><%= t.llevar ? ' · PARA LLEVAR' : '' %></p>
+            </div>
+            <span class="text-xs text-emerald-400 whitespace-nowrap text-right">
+              <i class="fa-solid fa-check"></i><br>
+              <%= new Date(t.fecha_listo).toLocaleString('es-HN') %>
+            </span>
+          </div>
+          <% if (t.comentarios) { %>
+            <p class="text-amber-300 text-sm italic">"<%= t.comentarios %>"</p>
+          <% } %>
+          <ul class="flex flex-col gap-1 text-white text-sm">
+            <% t.lineas.forEach((l) => { %>
+              <li>
+                <span class="font-bold"><%= l.cantidad %>x</span> <%= l.producto %><% if (l.cortesia) { %> <span class="text-amber-400">(cortesía)</span><% } %>
+                <% if (l.descripcion && l.descripcion !== l.producto) { %>
+                  <div class="text-slate-400 text-xs pl-4"><%= l.descripcion %></div>
+                <% } %>
+              </li>
+            <% }) %>
+          </ul>
+        </article>
+      <% }) %>
+    <% } %>
+  </main>
+</body>
+</html>

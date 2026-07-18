@@ -510,7 +510,34 @@
       renderCarrito();
 
       dialogAsistente.close();
+      mostrarToast(`Agregado: ${asistenteActual.producto.producto}`);
     });
+
+    function mostrarToast(mensaje) {
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-5 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-sm font-medium ' +
+        'rounded-lg px-6 py-3 shadow-lg z-50 flex items-center justify-center gap-2 opacity-0 transition-opacity ' +
+        'duration-200 w-[90vw] max-w-md';
+      toast.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${mensaje}`;
+      document.body.appendChild(toast);
+      requestAnimationFrame(() => { toast.style.opacity = '1'; });
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 200);
+      }, 1800);
+    }
+
+    function destellarBoton(btn) {
+      const bgOriginal = btn.style.backgroundColor;
+      const colorOriginal = btn.style.color;
+      btn.style.transition = 'background-color 0.15s, color 0.15s';
+      btn.style.backgroundColor = '#059669';
+      btn.style.color = '#ffffff';
+      setTimeout(() => {
+        btn.style.backgroundColor = bgOriginal;
+        btn.style.color = colorOriginal;
+      }, 300);
+    }
 
     function agregarAlCarrito(p) {
       const existente = carrito.find((i) => i.productoid === p.productoid);
@@ -555,6 +582,8 @@
               abrirAsistente(p);
             } else {
               agregarAlCarrito(p);
+              destellarBoton(btn);
+              mostrarToast(`Agregado: ${p.producto}`);
             }
           });
           productosGrid.appendChild(btn);
