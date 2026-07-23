@@ -19,13 +19,20 @@
         <article class="bg-slate-800 border-2 border-emerald-700/50 rounded-xl p-4 flex flex-col gap-2">
           <div class="flex justify-between items-start">
             <div>
-              <p class="text-white font-bold text-lg">#<%= t.nopedido %> · <%= t.nomesa %></p>
-              <p class="text-slate-400 text-sm"><%= t.mesero %><%= t.llevar ? ' · PARA LLEVAR' : '' %></p>
+              <p class="text-white font-bold text-lg flex items-center gap-2 flex-wrap">
+                #<%= t.nopedido %> · <%= t.nomesa %>
+                <% if (t.llevar) { %>
+                  <span class="inline-flex items-center gap-1 bg-sky-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    <i class="fa-solid fa-bag-shopping"></i> PARA LLEVAR
+                  </span>
+                <% } %>
+              </p>
+              <p class="text-slate-400 text-sm"><%= t.mesero %></p>
             </div>
-            <span class="text-xs text-emerald-400 whitespace-nowrap text-right">
-              <i class="fa-solid fa-check"></i><br>
-              <%= new Date(t.fecha_listo).toLocaleString('es-HN') %>
-            </span>
+            <div class="text-xs text-right whitespace-nowrap">
+              <p class="text-slate-300">Pedido: <%= new Date(t.fecha).toLocaleString('es-HN') %></p>
+              <p class="text-emerald-400 mt-0.5"><i class="fa-solid fa-check"></i> <%= t.minutos %> min hasta despacho</p>
+            </div>
           </div>
           <% if (t.comentarios) { %>
             <p class="text-amber-300 text-sm italic">"<%= t.comentarios %>"</p>

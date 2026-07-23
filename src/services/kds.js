@@ -87,6 +87,7 @@ async function historico(zonaid, limite = 50) {
 
   return cabeceras.map((c) => ({
     ...c,
+    minutos: Math.round((new Date(c.fecha_listo).getTime() - new Date(c.fecha).getTime()) / 60000),
     lineas: lineas
       .filter((l) => l.pedidomesaid === c.pedidomesaid)
       .map((l) => ({
