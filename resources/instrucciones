@@ -18,3 +18,16 @@ Argumentos: src\app.js
 nssm start Restaurante
 
 una vez corriendo el servicio, puedes instalar el apk
+
+
+//CORRER ESTE COMANDO SQL PARA MARCAR TODOS LOS PEDIDOS COMO PROCESADOS
+INSERT IGNORE INTO kds (pedidomesaid, zonaid)
+SELECT DISTINCT dp.pedidomesaid, pr.zonaid
+FROM detallepedido dp
+JOIN productos pr ON pr.productoid = dp.productoid
+JOIN cuentamesa cm ON cm.cuentamesaid = dp.cuentamesaid
+JOIN reservamesa rm ON rm.reservaid = cm.reservaid
+JOIN mesas m ON m.mesaid = rm.mesaid
+JOIN zonas z ON z.zonaid = m.zonaid
+WHERE dp.cancelado = 0 AND dp.padre_detallepedidoid IS NULL
+  AND z.restauranteid = 1;

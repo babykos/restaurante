@@ -26,7 +26,6 @@ async function pedidosPendientes(zonaid) {
      JOIN usuarios u ON u.usuarioid = rm.usuarioid
      LEFT JOIN kds kl ON kl.pedidomesaid = dp.pedidomesaid AND kl.zonaid = pr.zonaid
      WHERE pr.zonaid = :zonaid AND dp.cancelado = 0 AND dp.padre_detallepedidoid IS NULL
-       AND cm.inactiva = 0 AND cm.nodocumento IS NULL
        AND z.restauranteid = :restauranteid
        AND kl.pedidomesaid IS NULL
      ORDER BY pm.fecha ASC, pm.nopedido ASC, dp.detallepedidoid ASC`,
