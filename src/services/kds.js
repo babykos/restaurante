@@ -27,6 +27,7 @@ async function pedidosPendientes(zonaid) {
      LEFT JOIN kds kl ON kl.pedidomesaid = dp.pedidomesaid AND kl.zonaid = pr.zonaid
      WHERE pr.zonaid = :zonaid AND dp.cancelado = 0 AND dp.padre_detallepedidoid IS NULL
        AND z.restauranteid = :restauranteid
+       AND pm.fecha >= (NOW() - INTERVAL 1 DAY)
        AND kl.pedidomesaid IS NULL
      ORDER BY pm.fecha ASC, pm.nopedido ASC, dp.detallepedidoid ASC`,
     { zonaid, restauranteid: RESTAURANTEID }
