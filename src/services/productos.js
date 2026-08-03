@@ -14,6 +14,16 @@ async function catalogo() {
   return rows;
 }
 
+async function categorias() {
+  const [rows] = await pool.query(
+    `SELECT categoriaid, categoria, padre
+     FROM categoriasproductos
+     WHERE publicado = 1
+     ORDER BY orden, categoria`
+  );
+  return rows;
+}
+
 async function variantes() {
   const [rows] = await pool.query('SELECT varianteid, grupoid, variante FROM variantesproductos ORDER BY grupoid, variante');
   return rows;
@@ -129,4 +139,4 @@ async function resolverAsistente(productoidPadre, opcionidsSeleccionados) {
   };
 }
 
-module.exports = { catalogo, obtenerPrecioImpuesto, variantes, asistentes, resolverAsistente };
+module.exports = { catalogo, categorias, obtenerPrecioImpuesto, variantes, asistentes, resolverAsistente };

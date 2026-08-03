@@ -2,15 +2,16 @@ const express = require('express');
 const { requireAuth, requireEncargado } = require('../middleware/auth');
 const { cargarCuentaYValidarDueno, bloqueadaParaPedidos } = require('../middleware/cuentas');
 const { setFlash, popFlash } = require('../middleware/flash');
-const { catalogo, variantes, asistentes } = require('../services/productos');
+const { catalogo, categorias, variantes, asistentes } = require('../services/productos');
 const cuentasService = require('../services/cuentas');
 
 const router = express.Router();
 
 router.get('/:cuentamesaid', requireAuth, cargarCuentaYValidarDueno, async (req, res, next) => {
   try {
-    const [productos, variantesProductos, asistentesProductos, pedido] = await Promise.all([
+    const [productos, categoriasArbol, variantesProductos, asistentesProductos, pedido] = await Promise.all([
       catalogo(),
+      categorias(),
       variantes(),
       asistentes(),
       cuentasService.detalle(req.cuenta.cuentamesaid),
@@ -18,6 +19,7 @@ router.get('/:cuentamesaid', requireAuth, cargarCuentaYValidarDueno, async (req,
     res.render('cuentas/show', {
       cuenta: req.cuenta,
       productos,
+      categoriasArbol,
       variantesProductos,
       asistentesProductos,
       pedido,

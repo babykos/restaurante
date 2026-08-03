@@ -225,6 +225,7 @@
     }
 
     const productos = <%- JSON.stringify(typeof productos !== 'undefined' ? productos : []) %>;
+    const categoriasArbol = <%- JSON.stringify(typeof categoriasArbol !== 'undefined' ? categoriasArbol : []) %>;
     const variantesProductos = <%- JSON.stringify(typeof variantesProductos !== 'undefined' ? variantesProductos : []) %>;
     const asistentesProductos = <%- JSON.stringify(typeof asistentesProductos !== 'undefined' ? asistentesProductos : {}) %>;
     const carrito = [];
@@ -560,50 +561,71 @@
     const productosGrid = document.getElementById('productos-grid');
     const btnInicioCategoria = document.getElementById('btn-inicio-categoria');
 
-    const categorias = [...new Map(productos.map((p) => [p.categoriaid, p.categoria])).entries()];
+    const hijosPorPadre = new Map();
+    categoriasArbol.forEach((c) => {
+      const clave = c.padre === null ? 'raiz' : c.padre;
+      if (!hijosPorPadre.has(clave)) hijosPorPadre.set(clave, []);
+      hijosPorPadre.get(clave).push(c);
+    });
 
-    function mostrarCategorias() {
-      productosGrid.classList.add('hidden');
-      categoriasGrid.classList.remove('hidden');
-      btnInicioCategoria.classList.add('hidden');
+    let pilaCategorias = [];
+
+    function crearBotonProducto(p) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 text-sm font-medium rounded-md py-3 px-2';
+      btn.textContent = `${p.producto} — ${Number(p.precioventa).toFixed(2)}`;
+      btn.addEventListener('click', () => {
+        if (p.esAsistente) {
+          abrirAsistente(p);
+        } else {
+          agregarAlCarrito(p);
+          destellarBoton(btn);
+          mostrarToast(`Agregado: ${p.producto}`);
+        }
+      });
+      return btn;
     }
 
-    function mostrarProductosDeCategoria(categoriaid, nombre) {
-      productosGrid.innerHTML = '';
-      productos
-        .filter((p) => p.categoriaid === categoriaid)
-        .forEach((p) => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 text-sm font-medium rounded-md py-3 px-2';
-          btn.textContent = `${p.producto} — ${Number(p.precioventa).toFixed(2)}`;
-          btn.addEventListener('click', () => {
-            if (p.esAsistente) {
-              abrirAsistente(p);
-            } else {
-              agregarAlCarrito(p);
-              destellarBoton(btn);
-              mostrarToast(`Agregado: ${p.producto}`);
-            }
-          });
-          productosGrid.appendChild(btn);
-        });
-      categoriasGrid.classList.add('hidden');
-      productosGrid.classList.remove('hidden');
-      btnInicioCategoria.classList.remove('hidden');
-      btnInicioCategoria.innerHTML = `<i class="fa-solid fa-arrow-left"></i> ${nombre}`;
-    }
-
-    categorias.forEach(([categoriaid, nombre]) => {
+    function crearBotonCategoria(c) {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'bg-sky-400 hover:bg-sky-500 text-white text-sm font-medium rounded-md py-4 px-2';
-      btn.textContent = nombre;
-      btn.addEventListener('click', () => mostrarProductosDeCategoria(categoriaid, nombre));
-      categoriasGrid.appendChild(btn);
+      btn.textContent = c.categoria;
+      btn.addEventListener('click', () => {
+        pilaCategorias.push(c);
+        renderNivel();
+      });
+      return btn;
+    }
+
+    function renderNivel() {
+      const actual = pilaCategorias[pilaCategorias.length - 1] || null;
+      const hijos = hijosPorPadre.get(actual ? actual.categoriaid : 'raiz') || [];
+      const productosDelNivel = actual ? productos.filter((p) => p.categoriaid === actual.categoriaid) : [];
+
+      categoriasGrid.innerHTML = '';
+      hijos.forEach((c) => categoriasGrid.appendChild(crearBotonCategoria(c)));
+      categoriasGrid.classList.toggle('hidden', hijos.length === 0);
+
+      productosGrid.innerHTML = '';
+      productosDelNivel.forEach((p) => productosGrid.appendChild(crearBotonProducto(p)));
+      productosGrid.classList.toggle('hidden', productosDelNivel.length === 0);
+
+      if (actual) {
+        btnInicioCategoria.classList.remove('hidden');
+        btnInicioCategoria.innerHTML = `<i class="fa-solid fa-arrow-left"></i> ${actual.categoria}`;
+      } else {
+        btnInicioCategoria.classList.add('hidden');
+      }
+    }
+
+    btnInicioCategoria.addEventListener('click', () => {
+      pilaCategorias.pop();
+      renderNivel();
     });
 
-    btnInicioCategoria.addEventListener('click', mostrarCategorias);
+    renderNivel();
   </script>
 </body>
 </html>
