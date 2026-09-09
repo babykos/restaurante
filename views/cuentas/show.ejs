@@ -268,7 +268,16 @@
 
     document.getElementById('btn-aplicar-descripcion').addEventListener('click', () => {
       if (filaEditandoDescripcion !== null) {
-        carrito[filaEditandoDescripcion].descripcion = inputDescripcionVariante.value;
+        const item = carrito[filaEditandoDescripcion];
+        const nuevaDescripcion = inputDescripcionVariante.value.trim();
+        if (item.cantidad > 1 && nuevaDescripcion) {
+          // PROVISIONAL: la fila agrupa varias unidades. Se separa una a su propia fila
+          // personalizada para no forzar la misma personalizacion al resto.
+          item.cantidad -= 1;
+          carrito.splice(filaEditandoDescripcion + 1, 0, { ...item, cantidad: 1, descripcion: nuevaDescripcion });
+        } else {
+          item.descripcion = nuevaDescripcion;
+        }
         renderCarrito();
       }
       dialogVariantes.close();
@@ -541,7 +550,10 @@
     }
 
     function agregarAlCarrito(p) {
-      const existente = carrito.find((i) => i.productoid === p.productoid);
+      // Solo se agrupa en una fila existente si esa fila todavia no fue personalizada.
+      // Apenas una fila tiene variantes/nota, la siguiente unidad entra en su propia fila
+      // para poder personalizarla aparte.
+      const existente = carrito.find((i) => i.productoid === p.productoid && !i.descripcion);
       if (existente) {
         existente.cantidad += 1;
       } else {
