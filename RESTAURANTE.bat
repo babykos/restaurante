@@ -508,6 +508,22 @@ try {
         throw "El servicio '$nombre' no arranco."
     }
 
+    # ---------------------------------------------------------- Firewall
+    Paso 'Firewall'
+    $regla = "Restaurante web (TCP $puerto)"
+
+    # Quitar reglas creadas por este script para puertos anteriores
+    Get-NetFirewallRule -DisplayName 'Restaurante web (TCP *)' -ErrorAction SilentlyContinue |
+        Where-Object { $_.DisplayName -ne $regla } |
+        ForEach-Object { Info "Eliminando regla anterior '$($_.DisplayName)'"; Remove-NetFirewallRule -Name $_.Name }
+
+    if (Get-NetFirewallRule -DisplayName $regla -ErrorAction SilentlyContinue) {
+        Ok "La regla '$regla' ya existe."
+    } else {
+        New-NetFirewallRule -DisplayName $regla -Direction Inbound -Protocol TCP -LocalPort $puerto -Action Allow -Profile Any | Out-Null
+        Ok "Regla de entrada creada para el puerto $puerto (acceso desde la intranet)."
+    }
+
     # ---------------------------------------------------------- Resumen
     $ips = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
         Where-Object { $_.IPAddress -notmatch '^(127\.|169\.254\.)' } |
